@@ -107,11 +107,7 @@ class OpenGLMobject:
         self.family = [self]
         self.locked_data_keys = set()
         self.needs_new_bounding_box = True
-        if model_matrix is None:
-            self.model_matrix = np.eye(4)
-        else:
-            self.model_matrix = model_matrix
-
+        self.model_matrix = np.eye(4) if model_matrix is None else model_matrix
         self.init_data()
         self.init_updaters()
         # self.init_event_listners()
@@ -373,12 +369,11 @@ class OpenGLMobject:
         )
         if len(all_points) == 0:
             return np.zeros((3, self.dim))
-        else:
-            # Lower left and upper right corners
-            mins = all_points.min(0)
-            maxs = all_points.max(0)
-            mids = (mins + maxs) / 2
-            return np.array([mins, mids, maxs])
+        # Lower left and upper right corners
+        mins = all_points.min(0)
+        maxs = all_points.max(0)
+        mids = (mins + maxs) / 2
+        return np.array([mins, mids, maxs])
 
     def refresh_bounding_box(self, recurse_down=False, recurse_up=True):
         for mob in self.get_family(recurse_down):
@@ -421,10 +416,7 @@ class OpenGLMobject:
         return self
 
     def get_family(self, recurse=True):
-        if recurse:
-            return self.family
-        else:
-            return [self]
+        return self.family if recurse else [self]
 
     def family_members_with_points(self):
         return [m for m in self.get_family() if m.has_points()]
@@ -778,7 +770,7 @@ class OpenGLMobject:
         Returns a new mobject containing multiple copies of this one
         arranged in a grid
         """
-        grid = self.get_group_class()(*(self.copy() for n in range(n_rows * n_cols)))
+        grid = self.get_group_class()(*(self.copy() for _ in range(n_rows * n_cols)))
         grid.arrange_in_grid(n_rows, n_cols, **kwargs)
         if height is not None:
             grid.set_height(height)
@@ -858,20 +850,14 @@ class OpenGLMobject:
 
     def generate_target(self, use_deepcopy=False):
         self.target = None  # Prevent exponential explosion
-        if use_deepcopy:
-            self.target = self.deepcopy()
-        else:
-            self.target = self.copy()
+        self.target = self.deepcopy() if use_deepcopy else self.copy()
         return self.target
 
     def save_state(self, use_deepcopy=False):
         if hasattr(self, "saved_state"):
             # Prevent exponential growth of data
             self.saved_state = None
-        if use_deepcopy:
-            self.saved_state = self.deepcopy()
-        else:
-            self.saved_state = self.copy()
+        self.saved_state = self.deepcopy() if use_deepcopy else self.copy()
         return self
 
     def restore(self):
@@ -1025,7 +1011,7 @@ class OpenGLMobject:
 
     def apply_function(self, function, **kwargs):
         # Default to applying matrix about the origin, not mobjects center
-        if len(kwargs) == 0:
+        if not kwargs:
             kwargs["about_point"] = ORIGIN
         self.apply_points_function(
             lambda points: np.array([function(p) for p in points]), **kwargs
@@ -1164,9 +1150,7 @@ class OpenGLMobject:
             return True
         if self.get_bottom()[1] > config["frame_y_radius"]:
             return True
-        if self.get_top()[1] < -config["frame_y_radius"]:
-            return True
-        return False
+        return self.get_top()[1] < -config["frame_y_radius"]
 
     def stretch_about_point(self, factor, dim, point):
         return self.stretch(factor, dim, about_point=point)
@@ -1363,7 +1347,7 @@ class OpenGLMobject:
         return self
 
     def set_submobject_colors_by_gradient(self, *colors):
-        if len(colors) == 0:
+        if not colors:
             raise Exception("Need at least one color")
         elif len(colors) == 1:
             return self.set_color(*colors)
@@ -1655,7 +1639,7 @@ class OpenGLMobject:
             # If empty, simply add n point mobjects
             null_mob = self.copy()
             null_mob.set_points([self.get_center()])
-            self.set_submobjects([null_mob.copy() for k in range(n)])
+            self.set_submobjects([null_mob.copy() for _ in range(n)])
             return self
         target = curr + n
         repeat_indices = (np.arange(target) * curr) // target
@@ -1684,11 +1668,7 @@ class OpenGLMobject:
             if key not in mobject1.data or key not in mobject2.data:
                 continue
 
-            if key in ("points", "bounding_box"):
-                func = path_func
-            else:
-                func = interpolate
-
+            func = path_func if key in ("points", "bounding_box") else interpolate
             self.data[key][:] = func(mobject1.data[key], mobject2.data[key], alpha)
         for key in self.uniforms:
             self.uniforms[key] = interpolate(
@@ -1822,16 +1802,12 @@ class OpenGLMobject:
         # TODO, add a version of this which changes the point data instead
         # of the shader code
         for char in "xyz":
-            glsl_snippet = glsl_snippet.replace(char, "point." + char)
+            glsl_snippet = glsl_snippet.replace(char, f"point.{char}")
         rgb_list = get_colormap_list(colormap)
         self.set_color_by_code(
-            "color.rgb = float_to_color({}, {}, {}, {});".format(
-                glsl_snippet,
-                float(min_value),
-                float(max_value),
-                get_colormap_code(rgb_list),
-            ),
+            f"color.rgb = float_to_color({glsl_snippet}, {float(min_value)}, {float(max_value)}, {get_colormap_code(rgb_list)});"
         )
+
         return self
 
     # For shader data
@@ -1876,7 +1852,7 @@ class OpenGLMobject:
         # the given array, meaning its length has to be either 1
         # or the length of the array
         d_len = len(self.data[data_key])
-        if d_len != 1 and d_len != len(array):
+        if d_len not in [1, len(array)]:
             self.data[data_key] = resize_with_interpolation(
                 self.data[data_key],
                 len(array),
@@ -1887,8 +1863,7 @@ class OpenGLMobject:
         # If possible, try to populate an existing array, rather
         # than recreating it each frame
         points = self.points
-        shader_data = np.zeros(len(points), dtype=self.shader_dtype)
-        return shader_data
+        return np.zeros(len(points), dtype=self.shader_dtype)
 
     def read_data_to_shader(self, shader_data, shader_data_key, data_key):
         if data_key in self.locked_data_keys:
@@ -2015,7 +1990,7 @@ class OpenGLMobject:
 
 class OpenGLGroup(OpenGLMobject):
     def __init__(self, *mobjects, **kwargs):
-        if not all([isinstance(m, OpenGLMobject) for m in mobjects]):
+        if not all(isinstance(m, OpenGLMobject) for m in mobjects):
             raise Exception("All submobjects must be of type Mobject")
         super().__init__(**kwargs)
         self.add(*mobjects)
@@ -2101,10 +2076,9 @@ class _AnimationBuilder:
     def build(self):
         from ..animation.transform import _MethodAnimation
 
-        if self.overridden_animation:
-            anim = self.overridden_animation
-        else:
-            anim = _MethodAnimation(self.mobject, self.methods)
+        anim = self.overridden_animation or _MethodAnimation(
+            self.mobject, self.methods
+        )
 
         for attr, value in self.anim_args.items():
             setattr(anim, attr, value)

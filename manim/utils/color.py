@@ -456,7 +456,7 @@ def color_to_rgb(color: Union[Color, str]) -> np.ndarray:
     elif isinstance(color, Color):
         return np.array(color.get_rgb())
     else:
-        raise ValueError("Invalid color type: " + str(color))
+        raise ValueError(f"Invalid color type: {str(color)}")
 
 
 def color_to_rgba(color: Union[Color, str], alpha: float = 1) -> np.ndarray:

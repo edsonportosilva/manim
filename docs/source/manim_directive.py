@@ -179,13 +179,12 @@ class ManimDirective(Directive):
         save_last_frame = "save_last_frame" in self.options
         assert not (save_as_gif and save_last_frame)
 
-        ref_content = (
+        if ref_content := (
             self.options.get("ref_modules", [])
             + self.options.get("ref_classes", [])
             + self.options.get("ref_functions", [])
             + self.options.get("ref_methods", [])
-        )
-        if ref_content:
+        ):
             ref_block = "References: " + " ".join(ref_content)
 
         else:
@@ -213,8 +212,9 @@ class ManimDirective(Directive):
             ".. code-block:: python",
             "",
             "    from manim import *\n",
-            *("    " + line for line in self.content),
+            *(f"    {line}" for line in self.content),
         ]
+
         source_block = "\n".join(source_block)
 
         config.media_dir = (Path(setup.confdir) / "media").absolute()
@@ -270,11 +270,9 @@ class ManimDirective(Directive):
         elif save_as_gif:
             filename = f"{output_file}.gif"
             filesrc = video_dir / filename
-        elif save_last_frame:
+        else:
             filename = f"{output_file}.png"
             filesrc = images_dir / filename
-        else:
-            raise ValueError("Invalid combination of render flags received.")
         rendered_template = jinja2.Template(TEMPLATE).render(
             clsname=clsname,
             clsname_lowercase=clsname.lower(),
@@ -309,29 +307,30 @@ def _write_rendering_stats(scene_name, run_time, file_name):
 
 
 def _log_rendering_times(*args):
-    if rendering_times_file_path.exists():
-        with open(rendering_times_file_path) as file:
-            data = list(csv.reader(file))
-            if len(data) == 0:
-                sys.exit()
+    if not rendering_times_file_path.exists():
+        return
+    with open(rendering_times_file_path) as file:
+        data = list(csv.reader(file))
+        if not data:
+            sys.exit()
 
-            print("\nRendering Summary\n-----------------\n")
+        print("\nRendering Summary\n-----------------\n")
 
-            max_file_length = max(len(row[0]) for row in data)
-            for key, group in it.groupby(data, key=lambda row: row[0]):
-                key = key.ljust(max_file_length + 1, ".")
-                group = list(group)
-                if len(group) == 1:
-                    row = group[0]
-                    print(f"{key}{row[2].rjust(7, '.')}s {row[1]}")
-                    continue
-                time_sum = sum(float(row[2]) for row in group)
-                print(
-                    f"{key}{f'{time_sum:.3f}'.rjust(7, '.')}s  => {len(group)} EXAMPLES",
-                )
-                for row in group:
-                    print(f"{' '*(max_file_length)} {row[2].rjust(7)}s {row[1]}")
-        print("")
+        max_file_length = max(len(row[0]) for row in data)
+        for key, group in it.groupby(data, key=lambda row: row[0]):
+            key = key.ljust(max_file_length + 1, ".")
+            group = list(group)
+            if len(group) == 1:
+                row = group[0]
+                print(f"{key}{row[2].rjust(7, '.')}s {row[1]}")
+                continue
+            time_sum = sum(float(row[2]) for row in group)
+            print(
+                f"{key}{f'{time_sum:.3f}'.rjust(7, '.')}s  => {len(group)} EXAMPLES",
+            )
+            for row in group:
+                print(f"{' '*(max_file_length)} {row[2].rjust(7)}s {row[1]}")
+    print("")
 
 
 def _delete_rendering_times(*args):
@@ -353,8 +352,7 @@ def setup(app):
     app.connect("builder-inited", _delete_rendering_times)
     app.connect("build-finished", _log_rendering_times)
 
-    metadata = {"parallel_read_safe": False, "parallel_write_safe": True}
-    return metadata
+    return {"parallel_read_safe": False, "parallel_write_safe": True}
 
 
 TEMPLATE = r"""

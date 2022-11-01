@@ -52,8 +52,10 @@ class AnimatedBoundary(VGroup):
         self.fade_rate_func = fade_rate_func
         self.vmobject = vmobject
         self.boundary_copies = [
-            vmobject.copy().set_style(stroke_width=0, fill_opacity=0) for x in range(2)
+            vmobject.copy().set_style(stroke_width=0, fill_opacity=0)
+            for _ in range(2)
         ]
+
         self.add(*self.boundary_copies)
         self.total_time = 0
         self.add_updater(lambda m, dt: self.update_boundary_copies(dt))

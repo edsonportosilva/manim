@@ -99,17 +99,10 @@ def replace_keys(default: dict) -> dict:
     :class:`dict`
         The dictionary which is modified by replacing _ with . and vice versa
     """
-    for key in default:
-        if "_" in key:
-            temp = default[key]
-            del default[key]
-            key = key.replace("_", ".")
-            default[key] = temp
-        else:
-            temp = default[key]
-            del default[key]
-            key = key.replace(".", "_")
-            default[key] = temp
+    for key, temp in default.items():
+        del default[key]
+        key = key.replace("_", ".") if "_" in key else key.replace(".", "_")
+        default[key] = temp
     return default
 
 
@@ -222,11 +215,11 @@ modify write_cfg_subcmd_input to account for it.""",
 
     if action_to_userpath.lower() == "y" or level == "user":
         cfg_file_path = config_paths[1]
-        guarantee_existence(config_paths[1].parents[0])
+        guarantee_existence(cfg_file_path.parents[0])
         console.print(USER_CONFIG_MSG)
     else:
         cfg_file_path = config_paths[2]
-        guarantee_existence(config_paths[2].parents[0])
+        guarantee_existence(cfg_file_path.parents[0])
         console.print(CWD_CONFIG_MSG)
     with open(cfg_file_path, "w") as fp:
         parser.write(fp)

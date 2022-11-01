@@ -289,10 +289,7 @@ class ApplyMethod(Transform):
         # Make sure it's a list so that args.pop() works
         args = list(self.method_args)
 
-        if len(args) > 0 and isinstance(args[-1], dict):
-            method_kwargs = args.pop()
-        else:
-            method_kwargs = {}
+        method_kwargs = args.pop() if args and isinstance(args[-1], dict) else {}
         target = method.__self__.copy()
         method.__func__(target, *args, **method_kwargs)
         return target

@@ -110,7 +110,7 @@ def make_config_parser(custom_file: str = None) -> configparser.ConfigParser:
     with open(library_wide) as file:
         parser.read_file(file)  # necessary file
 
-    other_files = [user_wide, custom_file if custom_file else folder_wide]
+    other_files = [user_wide, custom_file or folder_wide]
     parser.read(other_files)  # optional files
 
     return parser
@@ -465,10 +465,9 @@ class ManimConfig(MutableMapping):
             )
 
     def __repr__(self) -> str:
-        rep = ""
-        for k, v in sorted(self._d.items(), key=lambda x: x[0]):
-            rep += f"{k}: {v}, "
-        return rep
+        return "".join(
+            f"{k}: {v}, " for k, v in sorted(self._d.items(), key=lambda x: x[0])
+        )
 
     # builders
     def digest_parser(self, parser: configparser.ConfigParser) -> "ManimConfig":
@@ -618,21 +617,16 @@ class ManimConfig(MutableMapping):
         else:
             self["frame_width"] = width
 
-        # other logic
-        val = parser["CLI"].get("tex_template_file")
-        if val:
+        if val := parser["CLI"].get("tex_template_file"):
             self.tex_template_file = val
 
-        val = parser["CLI"].get("progress_bar")
-        if val:
+        if val := parser["CLI"].get("progress_bar"):
             setattr(self, "progress_bar", val)
 
-        val = parser["ffmpeg"].get("loglevel")
-        if val:
+        if val := parser["ffmpeg"].get("loglevel"):
             self.ffmpeg_loglevel = val
 
-        val = parser["jupyter"].get("media_width")
-        if val:
+        if val := parser["jupyter"].get("media_width"):
             setattr(self, "media_width", val)
 
         return self
@@ -735,9 +729,7 @@ class ManimConfig(MutableMapping):
         if self["save_last_frame"]:
             self["write_to_movie"] = False
 
-        # Handle the -n flag.
-        nflag = args.from_animation_number
-        if nflag:
+        if nflag := args.from_animation_number:
             self.from_animation_number = nflag[0]
             try:
                 self.upto_animation_number = nflag[1]
@@ -749,14 +741,11 @@ class ManimConfig(MutableMapping):
         # Handle the quality flags
         self.quality = _determine_quality(args)
 
-        # Handle the -r flag.
-        rflag = args.resolution
-        if rflag:
+        if rflag := args.resolution:
             self.pixel_width = int(rflag[0])
             self.pixel_height = int(rflag[1])
 
-        fps = args.frame_rate
-        if fps:
+        if fps := args.frame_rate:
             self.frame_rate = float(fps)
 
         # Handle --custom_folders
@@ -1127,10 +1116,14 @@ class ManimConfig(MutableMapping):
         """Video quality (-q)."""
         keys = ["pixel_width", "pixel_height", "frame_rate"]
         q = {k: self[k] for k in keys}
-        for qual in constants.QUALITIES:
-            if all([q[k] == constants.QUALITIES[qual][k] for k in keys]):
-                return qual
-        return None
+        return next(
+            (
+                qual
+                for qual in constants.QUALITIES
+                if all(q[k] == constants.QUALITIES[qual][k] for k in keys)
+            ),
+            None,
+        )
 
     @quality.setter
     def quality(self, qual: str) -> None:
@@ -1179,18 +1172,19 @@ class ManimConfig(MutableMapping):
             from ..mobject.types.opengl_vectorized_mobject import OpenGLVMobject
             from ..mobject.types.vectorized_mobject import VMobject
 
-            for cls in ConvertToOpenGL._converted_classes:
-                if val == "opengl":
-                    conversion_dict = {
-                        Mobject: OpenGLMobject,
-                        VMobject: OpenGLVMobject,
-                    }
-                else:
-                    conversion_dict = {
-                        OpenGLMobject: Mobject,
-                        OpenGLVMobject: VMobject,
-                    }
+            conversion_dict = (
+                {
+                    Mobject: OpenGLMobject,
+                    VMobject: OpenGLVMobject,
+                }
+                if val == "opengl"
+                else {
+                    OpenGLMobject: Mobject,
+                    OpenGLVMobject: VMobject,
+                }
+            )
 
+            for cls in ConvertToOpenGL._converted_classes:
                 cls.__bases__ = tuple(
                     conversion_dict.get(base, base) for base in cls.__bases__
                 )
@@ -1443,8 +1437,7 @@ class ManimConfig(MutableMapping):
 
         dirs.remove(key)  # a path cannot contain itself
 
-        all_args = {k: self._d[k] for k in dirs}
-        all_args.update(kwargs)
+        all_args = {k: self._d[k] for k in dirs} | kwargs
         all_args["quality"] = f"{self.pixel_height}p{self.frame_rate}"
 
         path = self._d[key]
@@ -1453,10 +1446,10 @@ class ManimConfig(MutableMapping):
                 path = path.format(**all_args)
             except KeyError as exc:
                 raise KeyError(
-                    f"{key} {self._d[key]} requires the following "
-                    + "keyword arguments: "
-                    + " ".join(exc.args),
+                    f"{key} {self._d[key]} requires the following keyword arguments: "
+                    + " ".join(exc.args)
                 ) from exc
+
         return Path(path) if path else None
 
     def _set_dir(self, key: str, val: typing.Union[str, Path]):
@@ -1541,8 +1534,7 @@ class ManimConfig(MutableMapping):
     def tex_template(self):
         """Template used when rendering Tex.  See :class:`.TexTemplate`."""
         if not hasattr(self, "_tex_template") or not self._tex_template:
-            fn = self._d["tex_template_file"]
-            if fn:
+            if fn := self._d["tex_template_file"]:
                 self._tex_template = TexTemplateFromFile(filename=fn)
             else:
                 self._tex_template = TexTemplateLibrary.default.copy()

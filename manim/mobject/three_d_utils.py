@@ -56,9 +56,7 @@ def get_3d_vmob_unit_normal(vmob, point_index):
         vmob.points[ip3] - vmob.points[i],
         vmob.points[im3] - vmob.points[i],
     )
-    if np.linalg.norm(unit_normal) == 0:
-        return np.array(UP)
-    return unit_normal
+    return np.array(UP) if np.linalg.norm(unit_normal) == 0 else unit_normal
 
 
 def get_3d_vmob_start_corner_unit_normal(vmob):

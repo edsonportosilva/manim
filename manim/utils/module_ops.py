@@ -30,27 +30,26 @@ def get_module(file_name: Path):
         except Exception as e:
             logger.error(f"Failed to render scene: {str(e)}")
             sys.exit(2)
+    elif Path(file_name).exists():
+        ext = file_name.suffix
+        if ext != ".py":
+            raise ValueError(f"{file_name} is not a valid Manim python script.")
+        module_name = ext.replace(os.sep, ".").split(".")[-1]
+
+        warnings.filterwarnings(
+            "default",
+            category=DeprecationWarning,
+            module=module_name,
+        )
+
+        spec = importlib.util.spec_from_file_location(module_name, file_name)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        sys.path.insert(0, str(file_name.parent.absolute()))
+        spec.loader.exec_module(module)
+        return module
     else:
-        if Path(file_name).exists():
-            ext = file_name.suffix
-            if ext != ".py":
-                raise ValueError(f"{file_name} is not a valid Manim python script.")
-            module_name = ext.replace(os.sep, ".").split(".")[-1]
-
-            warnings.filterwarnings(
-                "default",
-                category=DeprecationWarning,
-                module=module_name,
-            )
-
-            spec = importlib.util.spec_from_file_location(module_name, file_name)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = module
-            sys.path.insert(0, str(file_name.parent.absolute()))
-            spec.loader.exec_module(module)
-            return module
-        else:
-            raise FileNotFoundError(f"{file_name} not found")
+        raise FileNotFoundError(f"{file_name} not found")
 
 
 def get_scene_classes_from_module(module):

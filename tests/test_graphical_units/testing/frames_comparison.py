@@ -143,9 +143,7 @@ def frames_comparison(
 
     # Case where the decorator is called with and without parentheses.
     # If func is None, callabl(None) returns False
-    if callable(func):
-        return decorator_maker(func)
-    return decorator_maker
+    return decorator_maker(func) if callable(func) else decorator_maker
 
 
 def _make_test_comparing_frames(
@@ -185,10 +183,11 @@ def _make_test_comparing_frames(
         frames_tester = _FramesTester(file_path, show_diff=show_diff)
 
     file_writer_class = (
-        _make_scene_file_writer_class(frames_tester)
-        if not last_frame
-        else DummySceneFileWriter
+        DummySceneFileWriter
+        if last_frame
+        else _make_scene_file_writer_class(frames_tester)
     )
+
     testRenderer = _make_test_renderer_class(renderer_class)
 
     def real_test():

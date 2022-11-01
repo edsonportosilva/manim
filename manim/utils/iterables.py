@@ -78,7 +78,7 @@ def list_difference_update(l1, l2):
 
 
 def all_elements_are_instances(iterable, Class):
-    return all([isinstance(e, Class) for e in iterable])
+    return all(isinstance(e, Class) for e in iterable)
 
 
 def adjacent_n_tuples(objects, n):
@@ -156,10 +156,9 @@ def make_even_by_cycling(iterable_1, iterable_2):
     length = max(len(iterable_1), len(iterable_2))
     cycle1 = it.cycle(iterable_1)
     cycle2 = it.cycle(iterable_2)
-    return (
-        [next(cycle1) for x in range(length)],
-        [next(cycle2) for x in range(length)],
-    )
+    return [next(cycle1) for _ in range(length)], [
+        next(cycle2) for _ in range(length)
+    ]
 
 
 def remove_nones(sequence):

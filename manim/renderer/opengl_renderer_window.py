@@ -95,9 +95,9 @@ class Window(PygletWindow):
             )
         # in the form Y/X (UR)
         if custom_position in ["LEFT", "RIGHT"]:
-            custom_position = "O" + custom_position[0]
+            custom_position = f"O{custom_position[0]}"
         elif custom_position in ["UP", "DOWN"]:
-            custom_position = custom_position[0] + "O"
+            custom_position = f"{custom_position[0]}O"
         elif custom_position == "ORIGIN":
             custom_position = "O" * 2
         elif "," in custom_position:

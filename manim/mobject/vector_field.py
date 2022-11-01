@@ -795,10 +795,7 @@ class StreamLines(VectorField):
             step = max_steps
             if not step:
                 continue
-            if config["renderer"] == "opengl":
-                line = OpenGLVMobject()
-            else:
-                line = VMobject()
+            line = OpenGLVMobject() if config["renderer"] == "opengl" else VMobject()
             line.duration = step * dt
             step = max(1, int(len(points) / self.max_anchors_per_line))
             line.set_points_smoothly(points[::step])

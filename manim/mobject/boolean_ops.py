@@ -69,10 +69,11 @@ class _BooleanOps(VMobject, metaclass=ConvertToOpenGL):
         """
         path = SkiaPath()
 
-        if not np.all(np.isfinite(vmobject.points)):
-            points = np.zeros((1, 3))  # point invalid?
-        else:
-            points = vmobject.points
+        points = (
+            vmobject.points
+            if np.all(np.isfinite(vmobject.points))
+            else np.zeros((1, 3))
+        )
 
         if len(points) == 0:  # what? No points so return empty path
             return path
@@ -136,7 +137,7 @@ class _BooleanOps(VMobject, metaclass=ConvertToOpenGL):
                 n1, n2 = self._convert_2d_to_3d_array(points)
                 vmobject.add_quadratic_bezier_curve_to(n1, n2)
             else:
-                raise Exception("Unsupported: %s" % path_verb)
+                raise Exception(f"Unsupported: {path_verb}")
         return vmobject
 
 
@@ -176,9 +177,10 @@ class Union(_BooleanOps):
         if len(vmobjects) < 2:
             raise ValueError("At least 2 mobjects needed for Union.")
         super().__init__(**kwargs)
-        paths = []
-        for vmobject in vmobjects:
-            paths.append(self._convert_vmobject_to_skia_path(vmobject))
+        paths = [
+            self._convert_vmobject_to_skia_path(vmobject) for vmobject in vmobjects
+        ]
+
         outpen = SkiaPath()
         union(paths, outpen.getPen())
         self._convert_skia_path_to_vmobject(outpen)

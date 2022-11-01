@@ -136,11 +136,7 @@ def elliptical_arc_to_cubic_bezier(x1, y1, rx, ry, phi, fA, fS, x2, y2):
     # to help miminze cubic bezier curve approximation errors.
     # If dtheta is a multiple of 90 degrees, set the limit to 90 degrees,
     # otherwise 360/10=36 degrees is a decent sweep limit.
-    if degrees(dtheta) % 90 == 0:
-        sweep_limit = 90
-    else:
-        sweep_limit = 36
-
+    sweep_limit = 90 if degrees(dtheta) % 90 == 0 else 36
     segments = int(ceil(abs(degrees(dtheta)) / sweep_limit))
     segment = dtheta / float(segments)
     current_angle = theta1
@@ -213,8 +209,8 @@ def string_to_numbers(num_string: str) -> List[float]:
             except ValueError:
                 # in this case, it's something like "2.4.3.14 which should be parsed as "2.4 0.3 0.14"
                 undotted_parts = s.split(".")
-                float_results.append(float(undotted_parts[0] + "." + undotted_parts[1]))
-                float_results += [float("." + u) for u in undotted_parts[2:]]
+                float_results.append(float(f"{undotted_parts[0]}.{undotted_parts[1]}"))
+                float_results += [float(f".{u}") for u in undotted_parts[2:]]
     return float_results
 
 
@@ -260,7 +256,7 @@ class SVGPathMobject(VMobject, metaclass=ConvertToOpenGL):
 
     def generate_points(self):
         """Generates points from a given an SVG ``d`` attribute."""
-        pattern = "[%s]" % ("".join(self.get_path_commands()))
+        pattern = f'[{"".join(self.get_path_commands())}]'
         pairs = list(
             zip(
                 re.findall(pattern, self.path_string),
@@ -290,11 +286,7 @@ class SVGPathMobject(VMobject, metaclass=ConvertToOpenGL):
         is_relative = command.islower()
         command = command.upper()
 
-        # Keep track of the most recently completed point
-        if config["renderer"] == "opengl":
-            points = self.points
-        else:
-            points = self.points
+        points = self.points
         start_point = points[-1] if points.shape[0] else np.zeros((1, self.dim))
 
         # Produce the (absolute) coordinates of the controls and handles
@@ -323,10 +315,7 @@ class SVGPathMobject(VMobject, metaclass=ConvertToOpenGL):
             return
 
         elif command == "S":  # Smooth cubic
-            if config["renderer"] == "opengl":
-                points = self.points
-            else:
-                points = self.points
+            points = self.points
             prev_handle = start_point
             if prev_command.upper() in ["C", "S"]:
                 prev_handle = points[-2]

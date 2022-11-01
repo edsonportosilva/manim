@@ -556,8 +556,7 @@ class Camera:
         cairo.Context
             The cairo context of the pixel array.
         """
-        cached_ctx = self.get_cached_cairo_context(pixel_array)
-        if cached_ctx:
+        if cached_ctx := self.get_cached_cairo_context(pixel_array):
             return cached_ctx
         pw = self.pixel_width
         ph = self.pixel_height

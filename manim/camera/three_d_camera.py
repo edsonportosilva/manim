@@ -136,11 +136,11 @@ class ThreeDCamera(Camera):
         rot_matrix = self.get_rotation_matrix()
 
         def z_key(mob):
-            if not (hasattr(mob, "shade_in_3d") and mob.shade_in_3d):
-                return np.inf
-            # Assign a number to a three dimensional mobjects
-            # based on how close it is to the camera
-            return np.dot(mob.get_z_index_reference_point(), rot_matrix.T)[2]
+            return (
+                np.dot(mob.get_z_index_reference_point(), rot_matrix.T)[2]
+                if (hasattr(mob, "shade_in_3d") and mob.shade_in_3d)
+                else np.inf
+            )
 
         return sorted(mobjects, key=z_key)
 
@@ -362,13 +362,12 @@ class ThreeDCamera(Camera):
 
         if fixed_in_frame:
             return points
-        if fixed_orientation:
-            center_func = self.fixed_orientation_mobjects[mobject]
-            center = center_func()
-            new_center = self.project_point(center)
-            return points + (new_center - center)
-        else:
+        if not fixed_orientation:
             return self.project_points(points)
+        center_func = self.fixed_orientation_mobjects[mobject]
+        center = center_func()
+        new_center = self.project_point(center)
+        return points + (new_center - center)
 
     def add_fixed_orientation_mobjects(
         self, *mobjects, use_static_center_func=False, center_func=None

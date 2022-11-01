@@ -70,11 +70,7 @@ class OpenGLCamera(OpenGLMobject):
         else:
             self.frame_shape = frame_shape
 
-        if center_point is None:
-            self.center_point = ORIGIN
-        else:
-            self.center_point = center_point
-
+        self.center_point = ORIGIN if center_point is None else center_point
         if model_matrix is None:
             model_matrix = opengl.translation_matrix(0, 0, 11)
 
@@ -468,9 +464,7 @@ class OpenGLRenderer:
     def should_save_last_frame(self):
         if config["save_last_frame"]:
             return True
-        if self.scene.interactive_mode:
-            return False
-        return self.num_plays == 0
+        return False if self.scene.interactive_mode else self.num_plays == 0
 
     def get_image(self) -> Image.Image:
         """Returns an image from the current frame. The first argument passed to image represents
@@ -486,7 +480,7 @@ class OpenGLRenderer:
             The PIL image of the array.
         """
         raw_buffer_data = self.get_raw_frame_buffer_object_data()
-        image = Image.frombytes(
+        return Image.frombytes(
             "RGBA",
             self.get_pixel_shape(),
             raw_buffer_data,
@@ -495,7 +489,6 @@ class OpenGLRenderer:
             0,
             -1,
         )
-        return image
 
     def save_static_frame_data(self, scene, static_mobjects):
         pass
@@ -525,12 +518,11 @@ class OpenGLRenderer:
         #     0, 0, pw, ph, 0, 0, pw, ph, gl.GL_COLOR_BUFFER_BIT, gl.GL_LINEAR
         # )
         num_channels = 4
-        ret = self.frame_buffer_object.read(
+        return self.frame_buffer_object.read(
             viewport=self.frame_buffer_object.viewport,
             components=num_channels,
             dtype=dtype,
         )
-        return ret
 
     def get_frame(self):
         # get current pixel values as numpy data in order to test output
@@ -551,10 +543,9 @@ class OpenGLRenderer:
         fc = self.camera.get_center()
         if relative:
             return 2 * np.array([px / pw, py / ph, 0])
-        else:
-            # Only scale wrt one axis
-            scale = fh / ph
-            return fc + scale * np.array([(px - pw / 2), (py - ph / 2), 0])
+        # Only scale wrt one axis
+        scale = fh / ph
+        return fc + scale * np.array([(px - pw / 2), (py - ph / 2), 0])
 
     @property
     def background_color(self):

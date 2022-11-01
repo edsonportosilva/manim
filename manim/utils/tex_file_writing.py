@@ -80,9 +80,9 @@ def generate_tex_file(expression, environment=None, tex_template=None):
     if not os.path.exists(tex_dir):
         os.makedirs(tex_dir)
 
-    result = os.path.join(tex_dir, tex_hash(output)) + ".tex"
+    result = f"{os.path.join(tex_dir, tex_hash(output))}.tex"
     if not os.path.exists(result):
-        logger.info('Writing "{}" to {}'.format("".join(expression), result))
+        logger.info(f'Writing "{"".join(expression)}" to {result}')
         with open(result, "w", encoding="utf-8") as outfile:
             outfile.write(output)
     return result
@@ -211,14 +211,15 @@ def convert_to_svg(dvi_file, extension, page=1):
         commands = [
             "dvisvgm",
             "--pdf" if extension == ".pdf" else "",
-            "-p " + str(page),
+            f"-p {str(page)}",
             f'"{dvi_file}"',
             "-n",
             "-v 0",
-            "-o " + f'"{result}"',
+            f'-o "{result}"',
             ">",
             os.devnull,
         ]
+
         os.system(" ".join(commands))
 
     # if the file does not exist now, this means conversion failed
@@ -241,12 +242,11 @@ def print_all_tex_errors(log_file, tex_compiler, tex_file):
         )
     with open(log_file) as f:
         tex_compilation_log = f.readlines()
-        error_indices = [
+        if error_indices := [
             index
             for index, line in enumerate(tex_compilation_log)
             if line.startswith("!")
-        ]
-        if error_indices:
+        ]:
             with open(tex_file) as g:
                 tex = g.readlines()
                 for error_index in error_indices:

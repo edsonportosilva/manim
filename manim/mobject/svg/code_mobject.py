@@ -216,11 +216,11 @@ class Code(VGroup):
         if self.insert_line_no:
             self.line_numbers = self.gen_line_numbers()
             self.line_numbers.next_to(self.code, direction=LEFT, buff=self.line_no_buff)
+        if self.insert_line_no:
+            foreground = VGroup(self.code, self.line_numbers)
+        else:
+            foreground = self.code
         if self.background == "rectangle":
-            if self.insert_line_no:
-                foreground = VGroup(self.code, self.line_numbers)
-            else:
-                foreground = self.code
             rect = SurroundingRectangle(
                 foreground,
                 buff=self.margin,
@@ -233,10 +233,6 @@ class Code(VGroup):
             rect.round_corners(self.corner_radius)
             self.background_mobject = rect
         else:
-            if self.insert_line_no:
-                foreground = VGroup(self.code, self.line_numbers)
-            else:
-                foreground = self.code
             height = foreground.height + 0.1 * 3 + 2 * self.margin
             width = foreground.width + 0.1 * 3 + 2 * self.margin
 
@@ -304,7 +300,7 @@ class Code(VGroup):
             The generated line_numbers according to parameters.
         """
         line_numbers_array = []
-        for line_no in range(0, self.code_json.__len__()):
+        for line_no in range(self.code_json.__len__()):
             number = str(self.line_no_from + line_no)
             line_numbers_array.append(number)
         line_numbers = Paragraph(
@@ -329,7 +325,7 @@ class Code(VGroup):
             The generated code according to parameters.
         """
         lines_text = []
-        for line_no in range(0, self.code_json.__len__()):
+        for line_no in range(self.code_json.__len__()):
             line_str = ""
             for word_index in range(self.code_json[line_no].__len__()):
                 line_str = line_str + self.code_json[line_no][word_index][0]
@@ -371,15 +367,7 @@ class Code(VGroup):
                 os.path.join("assets", "codes", "generated_html_files"),
                 exist_ok=True,
             )
-            with open(
-                os.path.join(
-                    "assets",
-                    "codes",
-                    "generated_html_files",
-                    self.file_name + ".html",
-                ),
-                "w",
-            ) as file:
+            with open(os.path.join("assets", "codes", "generated_html_files", f"{self.file_name}.html"), "w") as file:
                 file.write(self.html_string)
 
     def gen_code_json(self):
@@ -390,12 +378,7 @@ class Code(VGroup):
         tab_spaces is 2d array with rows as line numbers
         and columns as corresponding number of indentation_chars in front of that line in code.
         """
-        if (
-            self.background_color == "#111111"
-            or self.background_color == "#272822"
-            or self.background_color == "#202020"
-            or self.background_color == "#000000"
-        ):
+        if self.background_color in ["#111111", "#272822", "#202020", "#000000"]:
             self.default_color = "#ffffff"
         else:
             self.default_color = "#000000"
@@ -417,14 +400,14 @@ class Code(VGroup):
         self.html_string = self.html_string[start_point:]
         # print(self.html_string)
         lines = self.html_string.split("\n")
-        lines = lines[0 : lines.__len__() - 2]
+        lines = lines[:lines.__len__() - 2]
         start_point = lines[0].find(">")
         lines[0] = lines[0][start_point + 1 :]
         # print(lines)
         self.code_json = []
         self.tab_spaces = []
         code_json_line_index = -1
-        for line_index in range(0, lines.__len__()):
+        for line_index in range(lines.__len__()):
             # print(lines[line_index])
             self.code_json.append([])
             code_json_line_index = code_json_line_index + 1
@@ -453,7 +436,7 @@ class Code(VGroup):
             indentation_chars_count = 0
             if lines[line_index]:
                 while lines[line_index][indentation_chars_count] == "\t":
-                    indentation_chars_count = indentation_chars_count + 1
+                    indentation_chars_count += 1
             self.tab_spaces.append(indentation_chars_count)
             # print(lines[line_index])
             lines[line_index] = self.correct_non_span(lines[line_index])
@@ -492,20 +475,16 @@ class Code(VGroup):
         """
         words = line_str.split("</span>")
         line_str = ""
-        for i in range(0, words.__len__()):
-            if i != words.__len__() - 1:
-                j = words[i].find("<span")
-            else:
-                j = words[i].__len__()
+        for i in range(words.__len__()):
+            j = words[i].find("<span") if i != words.__len__() - 1 else words[i].__len__()
             temp = ""
             starti = -1
-            for k in range(0, j):
+            for k in range(j):
                 if words[i][k] == "\t" and starti == -1:
                     continue
-                else:
-                    if starti == -1:
-                        starti = k
-                    temp = temp + words[i][k]
+                if starti == -1:
+                    starti = k
+                temp = temp + words[i][k]
             if temp != "":
                 if i != words.__len__() - 1:
                     temp = (
@@ -579,7 +558,7 @@ def hilite_me(
         html = highlight(code, get_lexer_by_name(language, **{}), formatter)
     if insert_line_no:
         html = insert_line_numbers_in_html(html, line_no_from)
-    html = "<!-- HTML generated by Code() -->" + html
+    html = f"<!-- HTML generated by Code() -->{html}"
     return html
 
 
@@ -601,16 +580,16 @@ def insert_line_numbers_in_html(html, line_no_from):
     match = re.search("(<pre[^>]*>)(.*)(</pre>)", html, re.DOTALL)
     if not match:
         return html
-    pre_open = match.group(1)
-    pre = match.group(2)
-    pre_close = match.group(3)
+    pre_open = match[1]
+    pre = match[2]
+    pre_close = match[3]
 
     html = html.replace(pre_close, "</pre></td></tr></table>")
     numbers = range(line_no_from, line_no_from + pre.count("\n") + 1)
-    format_lines = "%" + str(len(str(numbers[-1]))) + "i"
+    format_lines = f"%{len(str(numbers[-1]))}i"
     lines = "\n".join(format_lines % i for i in numbers)
     html = html.replace(
-        pre_open,
-        "<table><tr><td>" + pre_open + lines + "</pre></td><td>" + pre_open,
+        pre_open, f"<table><tr><td>{pre_open}{lines}</pre></td><td>{pre_open}"
     )
+
     return html

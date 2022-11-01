@@ -223,9 +223,7 @@ class Table(VGroup):
         self.line_config = line_config
 
         for row in table:
-            if len(row) == len(table[0]):
-                pass
-            else:
+            if len(row) != len(table[0]):
                 raise ValueError("Not all rows in table have the same length.")
 
         super().__init__(**kwargs)
@@ -316,11 +314,10 @@ class Table(VGroup):
             for k in range(len(self.row_labels)):
                 mob_table[k] = [self.row_labels[k]] + mob_table[k]
         if self.col_labels is not None:
-            if self.row_labels is not None:
-                if self.top_left_entry is not None:
-                    col_labels = [self.top_left_entry] + self.col_labels
-                    mob_table.insert(0, col_labels)
-                else:
+            if self.row_labels is None:
+                mob_table.insert(0, self.col_labels)
+            else:
+                if self.top_left_entry is None:
                     # Placeholder to use arrange_in_grid if top_left_entry is not set.
                     # Import OpenGLVMobject to work with --renderer=opengl
                     if config.renderer == "opengl":
@@ -331,9 +328,9 @@ class Table(VGroup):
                         dummy_class = VMobject
                     dummy_mobject = dummy_class()
                     col_labels = [dummy_mobject] + self.col_labels
-                    mob_table.insert(0, col_labels)
-            else:
-                mob_table.insert(0, self.col_labels)
+                else:
+                    col_labels = [self.top_left_entry] + self.col_labels
+                mob_table.insert(0, col_labels)
         return mob_table
 
     def _add_horizontal_lines(self) -> "Table":
@@ -602,19 +599,19 @@ class Table(VGroup):
                     table.get_entries((2,2)).rotate(PI)
                     self.add(table)
         """
-        if pos is not None:
+        if pos is None:
+            return self.elements
+        index = (
+            len(self.mob_table[0]) * (pos[0] - 1) + pos[1] - 2
             if (
                 self.row_labels is not None
                 and self.col_labels is not None
                 and self.top_left_entry is None
-            ):
-                index = len(self.mob_table[0]) * (pos[0] - 1) + pos[1] - 2
-                return self.elements[index]
-            else:
-                index = len(self.mob_table[0]) * (pos[0] - 1) + pos[1] - 1
-                return self.elements[index]
-        else:
-            return self.elements
+            )
+            else len(self.mob_table[0]) * (pos[0] - 1) + pos[1] - 1
+        )
+
+        return self.elements[index]
 
     def get_entries_without_labels(
         self,
@@ -655,11 +652,10 @@ class Table(VGroup):
                     table.get_entries_without_labels((2,2)).rotate(PI)
                     self.add(table)
         """
-        if pos is not None:
-            index = self.col_dim * (pos[0] - 1) + pos[1] - 1
-            return self.elements_without_labels[index]
-        else:
+        if pos is None:
             return self.elements_without_labels
+        index = self.col_dim * (pos[0] - 1) + pos[1] - 1
+        return self.elements_without_labels[index]
 
     def get_row_labels(self) -> VGroup:
         """Return the row labels of the table.
@@ -814,8 +810,7 @@ class Table(VGroup):
             row.get_bottom()[1] - self.v_buff / 2,
             0,
         ]
-        rec = Polygon(edge_UL, edge_UR, edge_DR, edge_DL, **kwargs)
-        return rec
+        return Polygon(edge_UL, edge_UR, edge_DR, edge_DL, **kwargs)
 
     def get_highlighted_cell(
         self, pos: Sequence[int] = (1, 1), color: Color = YELLOW, **kwargs
@@ -850,8 +845,7 @@ class Table(VGroup):
                     self.add(table)
         """
         cell = self.get_cell(pos)
-        bg_cell = BackgroundRectangle(cell, color=color, **kwargs)
-        return bg_cell
+        return BackgroundRectangle(cell, color=color, **kwargs)
 
     def add_highlighted_cell(
         self, pos: Sequence[int] = (1, 1), color: Color = YELLOW, **kwargs

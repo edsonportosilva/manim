@@ -312,8 +312,7 @@ class ImageMobjectFromCamera(AbstractImageMobject):
         return self.pixel_array
 
     def add_display_frame(self, **kwargs):
-        config = dict(self.default_display_frame_config)
-        config.update(kwargs)
+        config = dict(self.default_display_frame_config) | kwargs
         self.display_frame = SurroundingRectangle(self, **config)
         self.add(self.display_frame)
         return self

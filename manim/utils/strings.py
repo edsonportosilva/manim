@@ -47,7 +47,7 @@ def split_string_to_isolate_substrings(full_string, *substrings_to_isolate):
     For example, split_string_to_isolate_substrings("to be or not to be", "to", "be") would
     return ["to", " ", "be", " or not ", "to", " ", "be"]
     """
-    if len(substrings_to_isolate) == 0:
+    if not substrings_to_isolate:
         return [full_string]
     substring_to_isolate = substrings_to_isolate[0]
     all_substrings = list(

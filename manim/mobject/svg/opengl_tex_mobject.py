@@ -263,7 +263,7 @@ class OpenGLSingleStringMathTex(OpenGLSVGMobject):
 
     def modify_special_strings(self, tex):
         tex = self.remove_stray_braces(tex)
-        should_add_filler = reduce(
+        if should_add_filler := reduce(
             op.or_,
             [
                 # Fraction line needs something to be over
@@ -276,8 +276,7 @@ class OpenGLSingleStringMathTex(OpenGLSVGMobject):
                 tex.endswith("^"),
                 tex.endswith("dot"),
             ],
-        )
-        if should_add_filler:
+        ):
             filler = "{\\quad}"
             tex += filler
 
@@ -461,10 +460,7 @@ class OpenGLMathTex(OpenGLSingleStringMathTex):
             if not case_sensitive:
                 tex1 = tex1.lower()
                 tex2 = tex2.lower()
-            if substring:
-                return tex1 in tex2
-            else:
-                return tex1 == tex2
+            return tex1 in tex2 if substring else tex1 == tex2
 
         return OpenGLVGroup(
             *(m for m in self.submobjects if test(tex, m.get_tex_string()))
@@ -484,7 +480,7 @@ class OpenGLMathTex(OpenGLSingleStringMathTex):
         for texs, color in list(texs_to_color_map.items()):
             try:
                 # If the given key behaves like tex_strings
-                texs + ""
+                f"{texs}"
                 self.set_color_by_tex(texs, color, **kwargs)
             except TypeError:
                 # If the given key is a tuple

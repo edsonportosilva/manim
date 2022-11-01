@@ -27,8 +27,9 @@ def get_video_metadata(path_to_video: str) -> Dict[str, Any]:
         "stream=width,height,nb_frames,duration,avg_frame_rate,codec_name",
         "-print_format",
         "json",
-        str(path_to_video),
+        path_to_video,
     ]
+
     config, err, exitcode = capture(command)
     assert exitcode == 0, f"FFprobe error: {err}"
     return json.loads(config)["streams"][0]
@@ -38,6 +39,9 @@ def get_dir_layout(dirpath: str) -> List[str]:
     """Get list of paths relative to dirpath of all files in dir and subdirs recursively."""
     index_files: List[str] = []
     for root, dirs, files in os.walk(dirpath):
-        for file in files:
-            index_files.append(f"{os.path.relpath(os.path.join(root, file), dirpath)}")
+        index_files.extend(
+            f"{os.path.relpath(os.path.join(root, file), dirpath)}"
+            for file in files
+        )
+
     return index_files

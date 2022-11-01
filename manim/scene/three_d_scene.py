@@ -254,9 +254,12 @@ class ThreeDScene(Scene):
                 (gamma, self.camera.gamma_tracker),
                 (zoom, self.camera.zoom_tracker),
             ]
-            for value, tracker in value_tracker_pairs:
-                if value is not None:
-                    anims.append(tracker.animate.set_value(value))
+            anims.extend(
+                tracker.animate.set_value(value)
+                for value, tracker in value_tracker_pairs
+                if value is not None
+            )
+
             if frame_center is not None:
                 anims.append(self.camera._frame_center.animate.move_to(frame_center))
         else:
@@ -320,7 +323,7 @@ class ThreeDScene(Scene):
         camera_mobjects = self.renderer.camera.get_value_trackers() + [
             self.renderer.camera._frame_center,
         ]
-        if any([cm in moving_mobjects for cm in camera_mobjects]):
+        if any(cm in moving_mobjects for cm in camera_mobjects):
             return self.mobjects
         return moving_mobjects
 
@@ -399,10 +402,13 @@ class ThreeDScene(Scene):
             Some recognised kwargs are phi, theta, focal_distance, gamma,
             which have the same meaning as the parameters in set_camera_orientation.
         """
-        config = dict(
-            self.default_camera_orientation_kwargs,
-        )  # Where doe this come from?
-        config.update(kwargs)
+        config = (
+            dict(
+                self.default_camera_orientation_kwargs,
+            )
+            | kwargs
+        )
+
         self.set_camera_orientation(**config)
 
 

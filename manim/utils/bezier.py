@@ -212,7 +212,7 @@ def get_smooth_cubic_bezier_handle_points(points):
             handle_pairs[:, i] = closed_curve_solve_func(b[:, i])
         else:
             handle_pairs[:, i] = solve_func(b[:, i])
-    return handle_pairs[0::2], handle_pairs[1::2]
+    return handle_pairs[::2], handle_pairs[1::2]
 
 
 def get_smooth_handle_points(
@@ -285,7 +285,7 @@ def get_smooth_handle_points(
             handle_pairs[:, i] = closed_curve_solve_func(b[:, i])
         else:
             handle_pairs[:, i] = solve_func(b[:, i])
-    return handle_pairs[0::2], handle_pairs[1::2]
+    return handle_pairs[::2], handle_pairs[1::2]
 
 
 def diag_to_matrix(l_and_u: typing.Tuple[int, int], diag: np.ndarray) -> np.ndarray:
@@ -341,8 +341,8 @@ def get_quadratic_approximation_of_cubic(a0, h0, h1, a1):
         ti_bounds.append(ti)
     ti_min, ti_max = ti_bounds
     np.seterr(**settings)
-    ti_min_in_range = has_infl & (0 < ti_min) & (ti_min < 1)
-    ti_max_in_range = has_infl & (0 < ti_max) & (ti_max < 1)
+    ti_min_in_range = has_infl & (ti_min > 0) & (ti_min < 1)
+    ti_max_in_range = has_infl & (ti_max > 0) & (ti_max < 1)
 
     # Choose a value of t which starts at 0.5,
     # but is updated to one of the inflection points
@@ -366,7 +366,7 @@ def get_quadratic_approximation_of_cubic(a0, h0, h1, a1):
 
     m, n = np.shape(a0)
     result = np.zeros((6 * m, n))
-    result[0::6] = a0
+    result[::6] = a0
     result[1::6] = i0
     result[2::6] = mid
     result[3::6] = mid
@@ -423,7 +423,7 @@ def proportions_along_bezier_curve_for_point(
     # Method taken from
     # http://polymathprogrammer.com/2012/04/03/does-point-lie-on-bezier-curve/
 
-    if not all(np.shape(point) == np.shape(c_p) for c_p in control_points):
+    if any(np.shape(point) != np.shape(c_p) for c_p in control_points):
         raise ValueError(
             f"Point {point} and Control Points {control_points} have different shapes.",
         )

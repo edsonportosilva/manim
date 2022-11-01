@@ -28,7 +28,6 @@ class SampleSpaceScene(Scene):
     ):
         if new_label_kwargs is None:
             new_label_kwargs = {}
-        anims = []
         p_list = sample_space.complete_p_list(p_list)
         space_copy = sample_space.copy()
 
@@ -39,7 +38,7 @@ class SampleSpaceScene(Scene):
             part.stretch(p, dimension)
         parts.target.arrange(vect, buff=0)
         parts.target.move_to(space_copy)
-        anims.append(MoveToTarget(parts))
+        anims = [MoveToTarget(parts)]
         if hasattr(parts, "labels") and parts.labels is not None:
             label_kwargs = parts.label_kwargs
             label_kwargs.update(new_label_kwargs)
