@@ -29,11 +29,11 @@ def select_resolution():
         :class:`tuple`
             Tuple containing height and width.
     """
-    resolution_options = []
-    for quality in QUALITIES.items():
-        resolution_options.append(
-            (quality[1]["pixel_height"], quality[1]["pixel_width"]),
-        )
+    resolution_options = [
+        (quality[1]["pixel_height"], quality[1]["pixel_width"])
+        for quality in QUALITIES.items()
+    ]
+
     resolution_options.pop()
     choice = click.prompt(
         "\nSelect resolution:\n",
@@ -86,11 +86,7 @@ def project(default_settings, **args):
 
     PROJECT_NAME is the name of the folder in which the new project will be initialized.
     """
-    if args["project_name"]:
-        project_name = args["project_name"]
-    else:
-        project_name = click.prompt("Project Name", type=Path)
-
+    project_name = args["project_name"] or click.prompt("Project Name", type=Path)
     # in the future when implementing a full template system. Choices are going to be saved in some sort of config file for templates
     template_name = click.prompt(
         "Template",
@@ -104,13 +100,13 @@ def project(default_settings, **args):
         )
     else:
         project_name.mkdir()
-        new_cfg = dict()
         new_cfg_path = Path.resolve(project_name / "manim.cfg")
 
         if not default_settings:
+            new_cfg = {}
             for key, value in CFG_DEFAULTS.items():
                 if key == "scene_names":
-                    new_cfg[key] = template_name + "Template"
+                    new_cfg[key] = f"{template_name}Template"
                 elif key == "resolution":
                     new_cfg[key] = select_resolution()
                 else:
@@ -150,7 +146,7 @@ def scene(**args):
     scene = ""
     with open(Path.resolve(get_template_path() / f"{template_name}.mtp")) as f:
         scene = f.read()
-        scene = scene.replace(template_name + "Template", args["scene_name"], 1)
+        scene = scene.replace(f"{template_name}Template", args["scene_name"], 1)
 
     if args["file_name"]:
         file_name = Path(args["file_name"] + ".py")

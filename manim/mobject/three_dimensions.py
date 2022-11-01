@@ -294,11 +294,7 @@ class Sphere(Surface):
         v_range=(0, PI),
         **kwargs
     ):
-        if config.renderer == "opengl":
-            res_value = (101, 51)
-        else:
-            res_value = (24, 12)
-
+        res_value = (101, 51) if config.renderer == "opengl" else (24, 12)
         resolution = resolution if resolution is not None else res_value
 
         self.radius = radius
@@ -928,11 +924,7 @@ class Torus(Surface):
         resolution=None,
         **kwargs
     ):
-        if config.renderer == "opengl":
-            res_value = (101, 101)
-        else:
-            res_value = (24, 24)
-
+        res_value = (101, 101) if config.renderer == "opengl" else (24, 24)
         resolution = resolution if resolution is not None else res_value
 
         self.R = major_radius

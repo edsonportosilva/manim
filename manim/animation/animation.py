@@ -167,9 +167,7 @@ class Animation:
             raise TypeError("Animation only works on Mobjects")
 
     def __str__(self) -> str:
-        if self.name:
-            return self.name
-        return f"{self.__class__.__name__}({str(self.mobject)})"
+        return self.name or f"{self.__class__.__name__}({str(self.mobject)})"
 
     def __repr__(self) -> str:
         return str(self)

@@ -144,8 +144,7 @@ class LogBase(_ScaleBase):
             raise ValueError(
                 "log(0) is undefined. Make sure the value is in the domain of the function"
             )
-        value = math.log(value, self.base)
-        return value
+        return math.log(value, self.base)
 
     def get_custom_labels(
         self,
@@ -166,13 +165,12 @@ class LogBase(_ScaleBase):
             Additional arguments to be passed to :class:`~.Integer`.
         """
 
-        # uses `format` syntax to control the number of decimal places.
-        tex_labels = [
+        return [
             Integer(
                 self.base,
-                unit="^{%s}" % (f"{self.inverse_function(i):.{unit_decimal_places}f}"),
+                unit="^{%s}"
+                % (f"{self.inverse_function(i):.{unit_decimal_places}f}"),
                 **base_config,
             )
             for i in val_range
         ]
-        return tex_labels

@@ -68,26 +68,24 @@ def test_manim_init_subcommand():
     expected_manim_cfg = ""
     expected_main_py = ""
 
-    with open(
-        Path.resolve(Path(__file__).parent.parent / "manim/templates/template.cfg"),
-    ) as f:
-        expected_manim_cfg = f.read()
+    expected_manim_cfg = Path(
+        Path.resolve(
+            Path(__file__).parent.parent / "manim/templates/template.cfg"
+        )
+    ).read_text()
 
-    with open(
-        Path.resolve(Path(__file__).parent.parent / "manim/templates/Default.mtp"),
-    ) as f:
-        expected_main_py = f.read()
+    expected_main_py = Path(
+        Path.resolve(
+            Path(__file__).parent.parent / "manim/templates/Default.mtp"
+        )
+    ).read_text()
 
     manim_cfg_path = Path("manim.cfg")
     manim_cfg_content = ""
     main_py_path = Path("main.py")
     main_py_content = ""
-    with open(manim_cfg_path) as f:
-        manim_cfg_content = f.read()
-
-    with open(main_py_path) as f:
-        main_py_content = f.read()
-
+    manim_cfg_content = Path(manim_cfg_path).read_text()
+    main_py_content = Path(main_py_path).read_text()
     manim_cfg_path.unlink()
     main_py_path.unlink()
 

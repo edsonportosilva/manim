@@ -80,8 +80,8 @@ def test_graph_remove_edges():
     removed_mobjects = G.remove_edges((2, 3), (3, 4), (4, 5), (5, 1))
     assert len(removed_mobjects) == 4
     assert str(G) == "Graph on 5 vertices and 0 edges"
-    assert set(G._graph.edges()) == set()
-    assert set(G.edges.keys()) == set()
+    assert not set(G._graph.edges())
+    assert not set(G.edges.keys())
 
 
 def test_custom_animation_mobject_list():

@@ -340,8 +340,7 @@ class NumberLine(Line):
 
         number = self.scaling.inverse_function(number)
         alpha = float(number - self.x_range[0]) / (self.x_range[1] - self.x_range[0])
-        val = interpolate(self.get_start(), self.get_end(), alpha)
-        return val
+        return interpolate(self.get_start(), self.get_end(), alpha)
 
     def point_to_number(self, point: Sequence[float]) -> float:
         """Accepts a point with respect to the scene and returns
@@ -425,7 +424,7 @@ class NumberLine(Line):
         return num_mob
 
     def get_number_mobjects(self, *numbers, **kwargs) -> VGroup:
-        if len(numbers) == 0:
+        if not numbers:
             numbers = self.default_numbers_to_display()
         return VGroup([self.get_number_mobject(number, **kwargs) for number in numbers])
 
@@ -542,9 +541,7 @@ class NumberLine(Line):
     @staticmethod
     def _decimal_places_from_step(step) -> int:
         step = str(step)
-        if "." not in step:
-            return 0
-        return len(step.split(".")[-1])
+        return 0 if "." not in step else len(step.split(".")[-1])
 
 
 class UnitInterval(NumberLine):

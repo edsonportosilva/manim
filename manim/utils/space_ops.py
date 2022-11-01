@@ -67,7 +67,7 @@ def quaternion_mult(
         Returns a list of product of two quaternions.
     """
     if config.renderer == "opengl":
-        if len(quats) == 0:
+        if not quats:
             return [1, 0, 0, 0]
         result = quats[0]
         for next_quat in quats[1:]:
@@ -119,12 +119,11 @@ def quaternion_from_angle_axis(
     List[float]
         Gives back a quaternion from the angle and axis
     """
-    if config.renderer == "opengl":
-        if not axis_normalized:
-            axis = normalize(axis)
-        return [math.cos(angle / 2), *(math.sin(angle / 2) * axis)]
-    else:
+    if config.renderer != "opengl":
         return np.append(np.cos(angle / 2), np.sin(angle / 2) * normalize(axis))
+    if not axis_normalized:
+        axis = normalize(axis)
+    return [math.cos(angle / 2), *(math.sin(angle / 2) * axis)]
 
 
 def angle_axis_from_quaternion(quaternion: Sequence[float]) -> Sequence[float]:
@@ -269,10 +268,9 @@ def rotation_matrix(
     inhomogeneous_rotation_matrix = reduce(np.dot, [z_to_axis, about_z, axis_to_z])
     if not homogeneous:
         return inhomogeneous_rotation_matrix
-    else:
-        rotation_matrix = np.eye(4)
-        rotation_matrix[:3, :3] = inhomogeneous_rotation_matrix
-        return rotation_matrix
+    rotation_matrix = np.eye(4)
+    rotation_matrix[:3, :3] = inhomogeneous_rotation_matrix
+    return rotation_matrix
 
 
 def rotation_about_z(angle: float) -> List[List[float]]:
@@ -332,13 +330,11 @@ def angle_of_vector(vector: Sequence[float]) -> float:
     float
         The angle of the vector projected.
     """
-    if config.renderer == "opengl":
-        return np.angle(complex(*vector[:2]))
-    else:
+    if config.renderer != "opengl":
         z = complex(*vector[:2])
         if z == 0:
             return 0
-        return np.angle(complex(*vector[:2]))
+    return np.angle(complex(*vector[:2]))
 
 
 def angle_between_vectors(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
@@ -388,10 +384,7 @@ def normalize(vect: Union[np.ndarray, Tuple[float]], fall_back=None) -> np.ndarr
     if norm > 0:
         return np.array(vect) / norm
     else:
-        if fall_back is not None:
-            return fall_back
-        else:
-            return np.zeros(len(vect))
+        return fall_back if fall_back is not None else np.zeros(len(vect))
 
 
 def normalize_along_axis(array: np.ndarray, axis: np.ndarray) -> np.ndarray:
@@ -433,21 +426,18 @@ def get_unit_normal(v1: np.ndarray, v2: np.ndarray, tol: float = 1e-6) -> np.nda
     np.ndarray
         The normal of the two vectors.
     """
-    if config.renderer == "opengl":
-        v1 = normalize(v1)
-        v2 = normalize(v2)
-        cp = np.cross(v1, v2)
-        cp_norm = np.linalg.norm(cp)
-        if cp_norm < tol:
-            # Vectors align, so find a normal to them in the plane shared with the z-axis
-            new_cp = np.cross(np.cross(v1, OUT), v1)
-            new_cp_norm = np.linalg.norm(new_cp)
-            if new_cp_norm < tol:
-                return DOWN
-            return new_cp / new_cp_norm
-        return cp / cp_norm
-    else:
+    if config.renderer != "opengl":
         return normalize(np.cross(v1, v2))
+    v1 = normalize(v1)
+    v2 = normalize(v2)
+    cp = np.cross(v1, v2)
+    cp_norm = np.linalg.norm(cp)
+    if cp_norm < tol:
+        # Vectors align, so find a normal to them in the plane shared with the z-axis
+        new_cp = np.cross(np.cross(v1, OUT), v1)
+        new_cp_norm = np.linalg.norm(new_cp)
+        return DOWN if new_cp_norm < tol else new_cp / new_cp_norm
+    return cp / cp_norm
 
 
 ###
@@ -498,11 +488,7 @@ def regular_vertices(
     """
 
     if start_angle is None:
-        if n % 2 == 0:
-            start_angle = 0
-        else:
-            start_angle = TAU / 4
-
+        start_angle = 0 if n % 2 == 0 else TAU / 4
     start_vector = rotate_vector(RIGHT * radius, start_angle)
     vertices = compass_directions(n, start_vector)
 
@@ -643,8 +629,7 @@ def shoelace(x_y: np.ndarray) -> float:
     """
     x = x_y[:, 0]
     y = x_y[:, 1]
-    area = 0.5 * np.array(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
-    return area
+    return 0.5 * np.array(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
 
 
 def shoelace_direction(x_y: np.ndarray) -> str:

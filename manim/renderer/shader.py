@@ -44,16 +44,15 @@ def get_shader_code_from_file(file_path):
 
 def filter_attributes(unfiltered_attributes, attributes):
     # Construct attributes for only those needed by the shader.
-    filtered_attributes_dtype = []
-    for i, dtype_name in enumerate(unfiltered_attributes.dtype.names):
-        if dtype_name in attributes:
-            filtered_attributes_dtype.append(
-                (
-                    dtype_name,
-                    unfiltered_attributes.dtype[i].subdtype[0].str,
-                    unfiltered_attributes.dtype[i].shape,
-                ),
-            )
+    filtered_attributes_dtype = [
+        (
+            dtype_name,
+            unfiltered_attributes.dtype[i].subdtype[0].str,
+            unfiltered_attributes.dtype[i].shape,
+        )
+        for i, dtype_name in enumerate(unfiltered_attributes.dtype.names)
+        if dtype_name in attributes
+    ]
 
     filtered_attributes = np.zeros(
         unfiltered_attributes[unfiltered_attributes.dtype.names[0]].shape[0],
@@ -314,21 +313,21 @@ class Mesh(Object3D):
 
         from moderngl.program_members.attribute import Attribute
 
-        shader_attributes = []
-        for k, v in self.shader.shader_program._members.items():
-            if isinstance(v, Attribute):
-                shader_attributes.append(k)
+        shader_attributes = [
+            k
+            for k, v in self.shader.shader_program._members.items()
+            if isinstance(v, Attribute)
+        ]
+
         shader_attributes = filter_attributes(self.attributes, shader_attributes)
 
         vertex_buffer_object = self.shader.context.buffer(shader_attributes.tobytes())
         if self.indices is None:
             index_buffer_object = None
+        elif vert_index_data := self.indices.astype("i4").tobytes():
+            index_buffer_object = self.shader.context.buffer(vert_index_data)
         else:
-            vert_index_data = self.indices.astype("i4").tobytes()
-            if vert_index_data:
-                index_buffer_object = self.shader.context.buffer(vert_index_data)
-            else:
-                index_buffer_object = None
+            index_buffer_object = None
         vertex_array_object = self.shader.context.simple_vertex_array(
             self.shader.shader_program,
             vertex_buffer_object,
@@ -402,7 +401,7 @@ class FullScreenQuad(Mesh):
             # Use the name.
             shader_file_path = SHADER_FOLDER / f"{fragment_shader_name}.frag"
             fragment_shader_source = get_shader_code_from_file(shader_file_path)
-        elif fragment_shader_source is not None:
+        else:
             fragment_shader_source = textwrap.dedent(fragment_shader_source.lstrip())
 
         shader = Shader(

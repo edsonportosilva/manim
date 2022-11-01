@@ -198,7 +198,7 @@ class Scene:
                 cloned_updaters.append(cloned_updater)
             mobject_clone = clone_from_id[id(mobject)]
             mobject_clone.updaters = cloned_updaters
-            if len(cloned_updaters) > 0:
+            if cloned_updaters:
                 result.mobject_updater_lists.append((mobject_clone, cloned_updaters))
         return result
 
@@ -353,7 +353,8 @@ class Scene:
             bool
         """
         return self.always_update_mobjects or any(
-            [mob.has_time_based_updater() for mob in self.get_mobject_family_members()],
+            mob.has_time_based_updater()
+            for mob in self.get_mobject_family_members()
         )
 
     def get_top_level_mobjects(self):
@@ -387,16 +388,15 @@ class Scene:
         list
             List of mobject family members.
         """
-        if config.renderer == "opengl":
-            family_members = []
-            for mob in self.mobjects:
-                family_members.extend(mob.get_family())
-            return family_members
-        else:
+        if config.renderer != "opengl":
             return extract_mobject_family_members(
                 self.mobjects,
                 use_z_index=self.renderer.camera.use_z_index,
             )
+        family_members = []
+        for mob in self.mobjects:
+            family_members.extend(mob.get_family())
+        return family_members
 
     def add(self, *mobjects):
         """
@@ -474,11 +474,11 @@ class Scene:
             self.meshes = list(
                 filter(lambda mesh: mesh not in set(meshes_to_remove), self.meshes),
             )
-            return self
         else:
             for list_name in "mobjects", "foreground_mobjects":
                 self.restructure_mobjects(mobjects, list_name, False)
-            return self
+
+        return self
 
     def add_updater(self, func):
         self.updaters.append(func)
@@ -799,22 +799,8 @@ class Scene:
         time_progression
             The CommandLine Progress Bar.
         """
-        if len(animations) == 1 and isinstance(animations[0], Wait):
-            stop_condition = animations[0].stop_condition
-            if stop_condition is not None:
-                time_progression = self.get_time_progression(
-                    duration,
-                    f"Waiting for {stop_condition.__name__}",
-                    n_iterations=-1,  # So it doesn't show % progress
-                    override_skip_animations=True,
-                )
-            else:
-                time_progression = self.get_time_progression(
-                    duration,
-                    f"Waiting {self.renderer.num_plays}",
-                )
-        else:
-            time_progression = self.get_time_progression(
+        if len(animations) != 1 or not isinstance(animations[0], Wait):
+            return self.get_time_progression(
                 duration,
                 "".join(
                     [
@@ -824,7 +810,21 @@ class Scene:
                     ],
                 ),
             )
-        return time_progression
+
+        stop_condition = animations[0].stop_condition
+        return (
+            self.get_time_progression(
+                duration,
+                f"Waiting for {stop_condition.__name__}",
+                n_iterations=-1,  # So it doesn't show % progress
+                override_skip_animations=True,
+            )
+            if stop_condition is not None
+            else self.get_time_progression(
+                duration,
+                f"Waiting {self.renderer.num_plays}",
+            )
+        )
 
     def get_time_progression(
         self,
@@ -864,7 +864,7 @@ class Scene:
         else:
             step = 1 / config["frame_rate"]
             times = np.arange(0, run_time, step)
-        time_progression = tqdm(
+        return tqdm(
             times,
             desc=description,
             total=n_iterations,
@@ -872,7 +872,6 @@ class Scene:
             ascii=True if platform.system() == "Windows" else None,
             disable=config["progress_bar"] == "none",
         )
-        return time_progression
 
     def get_run_time(self, animations):
         """
@@ -890,14 +889,9 @@ class Scene:
             The total ``run_time`` of all of the animations in the list.
         """
 
-        if len(animations) == 1 and isinstance(animations[0], Wait):
-            if animations[0].stop_condition is not None:
-                return 0
-            else:
-                return animations[0].duration
-
-        else:
+        if len(animations) != 1 or not isinstance(animations[0], Wait):
             return np.max([animation.run_time for animation in animations])
+        return animations[0].duration if animations[0].stop_condition is None else 0
 
     def play(self, *args, **kwargs):
         self.renderer.play(self, *args, **kwargs)
@@ -939,7 +933,7 @@ class Scene:
         """
         # NOTE TODO : returns statement of this method are wrong. It should return nothing, as it makes a little sense to get any information from this method.
         # The return are kept to keep webgl renderer from breaking.
-        if len(animations) == 0:
+        if not animations:
             raise ValueError("Called Scene.play with no animations")
 
         self.animations = self.compile_animations(*animations, **play_kwargs)
@@ -1305,14 +1299,13 @@ class Scene:
             logger.warning("The value of the pressed key is too large.")
             return
 
-        if char == "r":
+        if char == "q":
+            self.quit_interaction = True
+        elif char == "r":
             self.camera.to_default_state()
             self.camera_target = np.array([0, 0, 0], dtype=np.float32)
-        elif char == "q":
-            self.quit_interaction = True
-        else:
-            if char in self.key_to_function_map:
-                self.key_to_function_map[char]()
+        elif char in self.key_to_function_map:
+            self.key_to_function_map[char]()
 
     def on_key_release(self, symbol, modifiers):
         pass

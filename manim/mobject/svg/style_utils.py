@@ -60,23 +60,15 @@ def cascade_element_style(
 
     # cascade the regular elements.
     for attr in CASCADING_STYLING_ATTRIBUTES:
-        entry = element.getAttribute(attr)
-        if entry:
+        if entry := element.getAttribute(attr):
             style[attr] = entry
 
-    # the style attribute should be handled separately in order to
-    # break it up nicely. furthermore, style takes priority over other
-    # attributes in the same element.
-    style_specs = element.getAttribute("style")
-    if style_specs:
+    if style_specs := element.getAttribute("style"):
         for style_spec in style_specs.split(";"):
             try:
                 key, value = style_spec.split(":")
             except ValueError as e:
-                if not style_spec.strip():
-                    # there was just a stray semicolon at the end, producing an emptystring
-                    pass
-                else:
+                if style_spec.strip():
                     raise e
             else:
                 style[key.strip()] = value.strip()
@@ -98,27 +90,24 @@ def parse_color_string(color_spec: str) -> str:
         Hexadecimal color string in the format `#rrggbb`
     """
 
-    if color_spec[0:3] == "rgb":
+    if color_spec.startswith("rgb"):
         # these are only in integer form, but the Colour module wants them in floats.
         splits = color_spec[4:-1].split(",")
-        if splits[0][-1] == "%":
-            # if the last character of the first number is a percentage,
-            # then interpret the number as a percentage
-            parsed_rgbs = [float(i[:-1]) / 100.0 for i in splits]
-        else:
-            parsed_rgbs = [int(i) / 255.0 for i in splits]
+        parsed_rgbs = (
+            [float(i[:-1]) / 100.0 for i in splits]
+            if splits[0][-1] == "%"
+            else [int(i) / 255.0 for i in splits]
+        )
 
-        hex_color = rgb_to_hex(parsed_rgbs)
+        return rgb_to_hex(parsed_rgbs)
 
     elif color_spec[0] == "#":
         # its OK, parse as hex color standard.
-        hex_color = color_spec
+        return color_spec
 
     else:
         # attempt to convert color names like "red" to hex color
-        hex_color = web2hex(color_spec, force_long=True)
-
-    return hex_color
+        return web2hex(color_spec, force_long=True)
 
 
 def fill_default_values(svg_style: Dict) -> None:

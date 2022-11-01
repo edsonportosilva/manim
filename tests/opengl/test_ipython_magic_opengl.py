@@ -12,10 +12,11 @@ def test_jupyter_file_naming():
     with tempconfig({"scene_names": [scene_name], "renderer": "opengl"}):
         file_name = _generate_file_name()
         match = re.match(expected_pattern, file_name)
-        assert scene_name in file_name, (
-            "Expected file to contain " + scene_name + " but got " + file_name
-        )
-        assert match, "file name does not match expected pattern " + expected_pattern
+        assert (
+            scene_name in file_name
+        ), f"Expected file to contain {scene_name} but got {file_name}"
+
+        assert match, f"file name does not match expected pattern {expected_pattern}"
     # needs manually set back to avoid issues across tests
     config.renderer = current_renderer
 

@@ -71,24 +71,29 @@ def render(
             "The short form of show_in_file_browser is deprecated and will be moved to support --format.",
         )
 
+
+
     class ClickArgs:
         def __init__(self, args):
-            for name in args:
-                setattr(self, name, args[name])
+            for name, value in args.items():
+                setattr(self, name, value)
 
         def _get_kwargs(self):
             return list(self.__dict__.items())
 
         def __eq__(self, other):
-            if not isinstance(other, ClickArgs):
-                return NotImplemented
-            return vars(self) == vars(other)
+            return (
+                vars(self) == vars(other)
+                if isinstance(other, ClickArgs)
+                else NotImplemented
+            )
 
         def __contains__(self, key):
             return key in self.__dict__
 
         def __repr__(self):
             return str(self.__dict__)
+
 
     click_args = ClickArgs(args)
     if args["jupyter"]:

@@ -35,13 +35,12 @@ def pytest_configure(config):
 def pytest_collection_modifyitems(config, items):
     if not config.getoption("--skip_slow"):
         return
-    else:
-        slow_skip = pytest.mark.skip(
-            reason="Slow test skipped due to --disable_slow flag.",
-        )
-        for item in items:
-            if "slow" in item.keywords:
-                item.add_marker(slow_skip)
+    slow_skip = pytest.mark.skip(
+        reason="Slow test skipped due to --disable_slow flag.",
+    )
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(slow_skip)
 
 
 @pytest.fixture(scope="session")
@@ -55,8 +54,7 @@ def python_version():
 @pytest.fixture
 def reset_cfg_file():
     cfgfilepath = os.path.join(os.path.dirname(__file__), "test_cli", "manim.cfg")
-    with open(cfgfilepath) as cfgfile:
-        original = cfgfile.read()
+    original = Path(cfgfilepath).read_text()
     yield
     with open(cfgfilepath, "w") as cfgfile:
         cfgfile.write(original)

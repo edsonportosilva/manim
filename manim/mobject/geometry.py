@@ -164,9 +164,8 @@ class TipableVMobject(VMobject, metaclass=ConvertToOpenGL):
             tip_length = self.get_default_tip_length()
         color = self.get_color()
         style = {"fill_color": color, "stroke_color": color}
-        style.update(self.tip_style)
-        tip = tip_shape(length=tip_length, **style)
-        return tip
+        style |= self.tip_style
+        return tip_shape(length=tip_length, **style)
 
     def position_tip(self, tip, at_start=False):
         # Last two control points, defining both
@@ -266,10 +265,7 @@ class TipableVMobject(VMobject, metaclass=ConvertToOpenGL):
         return self.points[-2]
 
     def get_end(self):
-        if self.has_tip():
-            return self.tip.get_start()
-        else:
-            return super().get_end()
+        return self.tip.get_start() if self.has_tip() else super().get_end()
 
     def get_start(self):
         if self.has_start_tip():
@@ -351,7 +347,7 @@ class Arc(TipableVMobject):
         samples[1::2] /= np.cos(theta / 2)
 
         points = np.zeros((3 * n_components, 3))
-        points[0::3] = samples[0:-1:2]
+        points[::3] = samples[:-1:2]
         points[1::3] = samples[1::2]
         points[2::3] = samples[2::2]
         return points
@@ -458,10 +454,11 @@ class ArcBetweenPoints(Arc):
 
         if radius is None:
             center = self.get_arc_center(warning=False)
-            if not self._failed_to_get_center:
-                self.radius = np.linalg.norm(np.array(start) - np.array(center))
-            else:
-                self.radius = math.inf
+            self.radius = (
+                math.inf
+                if self._failed_to_get_center
+                else np.linalg.norm(np.array(start) - np.array(center))
+            )
 
 
 class CurvedArrow(ArcBetweenPoints):
@@ -987,10 +984,7 @@ class Line(TipableVMobject):
         if buff == 0:
             return
         #
-        if self.path_arc == 0:
-            length = self.get_length()
-        else:
-            length = self.get_arc_length()
+        length = self.get_length() if self.path_arc == 0 else self.get_arc_length()
         #
         if length < 2 * buff:
             return
@@ -2834,10 +2828,7 @@ class Cutout(VMobject, metaclass=ConvertToOpenGL):
     def __init__(self, main_shape, *mobjects, **kwargs):
         super().__init__(**kwargs)
         self.append_points(main_shape.points)
-        if main_shape.get_direction() == "CW":
-            sub_direction = "CCW"
-        else:
-            sub_direction = "CW"
+        sub_direction = "CCW" if main_shape.get_direction() == "CW" else "CW"
         for mobject in mobjects:
             self.append_points(mobject.force_direction(sub_direction).points)
 
@@ -3008,18 +2999,18 @@ class Angle(VMobject, metaclass=ConvertToOpenGL):
             angle_1 = angle_of_vector(anchor_angle_1 - inter)
             angle_2 = angle_of_vector(anchor_angle_2 - inter)
 
+            start_angle = angle_1
             if not other_angle:
-                start_angle = angle_1
-                if angle_2 > angle_1:
-                    angle_fin = angle_2 - angle_1
-                else:
-                    angle_fin = 2 * np.pi - (angle_1 - angle_2)
+                angle_fin = (
+                    angle_2 - angle_1
+                    if angle_2 > angle_1
+                    else 2 * np.pi - (angle_1 - angle_2)
+                )
+
+            elif angle_2 < angle_1:
+                angle_fin = -angle_1 + angle_2
             else:
-                start_angle = angle_1
-                if angle_2 < angle_1:
-                    angle_fin = -angle_1 + angle_2
-                else:
-                    angle_fin = -2 * np.pi + (angle_2 - angle_1)
+                angle_fin = -2 * np.pi + (angle_2 - angle_1)
 
             self.angle_value = angle_fin
 
@@ -3101,9 +3092,7 @@ class Angle(VMobject, metaclass=ConvertToOpenGL):
                     self.add(line1, line2, angle, value)
         """
 
-        if degrees:
-            return self.angle_value / DEGREES
-        return self.angle_value
+        return self.angle_value / DEGREES if degrees else self.angle_value
 
 
 class RightAngle(Angle):

@@ -151,13 +151,14 @@ class OpenGLParagraph(OpenGLVGroup):
                 ],
             )
             char_index_counter += lines_str_list[line_index].__len__() + 1
-        self.lines = []
-        self.lines.append([])
+        self.lines = [[]]
         for line_no in range(chars_lines_text_list.__len__()):
             self.lines[0].append(chars_lines_text_list[line_no])
-        self.lines_initial_positions = []
-        for line_no in range(self.lines[0].__len__()):
-            self.lines_initial_positions.append(self.lines[0][line_no].get_center())
+        self.lines_initial_positions = [
+            self.lines[0][line_no].get_center()
+            for line_no in range(self.lines[0].__len__())
+        ]
+
         self.lines.append([])
         self.lines[1].extend(
             [self.alignment for _ in range(chars_lines_text_list.__len__())],
@@ -204,7 +205,7 @@ class OpenGLParagraph(OpenGLVGroup):
         alignment : :class:`str`
             Defines the alignment of paragraph. Possible values are "left", "right", "center".
         """
-        for line_no in range(0, self.lines[0].__len__()):
+        for line_no in range(self.lines[0].__len__()):
             self.change_alignment_for_a_line(alignment, line_no)
         return self
 
@@ -224,7 +225,7 @@ class OpenGLParagraph(OpenGLVGroup):
     def set_all_lines_to_initial_positions(self):
         """Set all lines to their initial positions."""
         self.lines[1] = [None for _ in range(self.lines[0].__len__())]
-        for line_no in range(0, self.lines[0].__len__()):
+        for line_no in range(self.lines[0].__len__()):
             self[line_no].move_to(
                 self.get_center() + self.lines_initial_positions[line_no],
             )
@@ -442,7 +443,7 @@ class OpenGLText(OpenGLSVGMobject):
         self.original_text = text
         self.disable_ligatures = disable_ligatures
         text_without_tabs = text
-        if text.find("\t") != -1:
+        if "\t" in text:
             text_without_tabs = text.replace("\t", " " * self.tab_width)
         self.text = text_without_tabs
         if self.line_spacing == -1:
@@ -523,10 +524,9 @@ class OpenGLText(OpenGLSVGMobject):
 
     def find_indexes(self, word: str, text: str):
         """Internally used function. Finds the indexes of ``text`` in ``word``."""
-        temp = re.match(r"\[([0-9\-]{0,}):([0-9\-]{0,})\]", word)
-        if temp:
-            start = int(temp.group(1)) if temp.group(1) != "" else 0
-            end = int(temp.group(2)) if temp.group(2) != "" else len(text)
+        if temp := re.match(r"\[([0-9\-]{0,}):([0-9\-]{0,})\]", word):
+            start = int(temp[1]) if temp[1] != "" else 0
+            end = int(temp[2]) if temp[2] != "" else len(text)
             start = len(text) + start if start < 0 else start
             end = len(text) + end if end < 0 else end
             return [(start, end)]
@@ -558,7 +558,7 @@ class OpenGLText(OpenGLSVGMobject):
 
     def set_color_by_t2c(self, t2c=None):
         """Internally used function. Sets colour for specified strings."""
-        t2c = t2c if t2c else self.t2c
+        t2c = t2c or self.t2c
         for word, color in list(t2c.items()):
             for start, end in self.find_indexes(word, self.original_text):
                 self.chars[start:end].set_color(color)
@@ -566,7 +566,7 @@ class OpenGLText(OpenGLSVGMobject):
     def set_color_by_t2g(self, t2g=None):
         """Internally used. Sets gradient colors for specified
         strings. Behaves similarly to ``set_color_by_t2c``."""
-        t2g = t2g if t2g else self.t2g
+        t2g = t2g or self.t2g
         for word, gradient in list(t2g.items()):
             for start, end in self.find_indexes(word, self.original_text):
                 self.chars[start:end].set_color_by_gradient(*gradient)
@@ -575,9 +575,7 @@ class OpenGLText(OpenGLSVGMobject):
         """Internally used function.
         Generates ``sha256`` hash for file name.
         """
-        settings = (
-            "PANGO" + self.font + self.slant + self.weight
-        )  # to differentiate Text and CairoText
+        settings = f"PANGO{self.font}{self.slant}{self.weight}"
         settings += str(self.t2f) + str(self.t2s) + str(self.t2w)
         settings += str(self.line_spacing) + str(self.size)
         settings += str(self.disable_ligatures)
@@ -642,7 +640,7 @@ class OpenGLText(OpenGLSVGMobject):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
         hash_name = self.text2hash()
-        file_name = os.path.join(dir_name, hash_name) + ".svg"
+        file_name = f"{os.path.join(dir_name, hash_name)}.svg"
         if os.path.exists(file_name):
             return file_name
         settings = self.text2settings()
@@ -966,10 +964,7 @@ class OpenGLMarkupText(OpenGLSVGMobject):
         else:
             nppc = self.n_points_per_cubic_curve
         for each in self:
-            if config["renderer"] == "opengl":
-                points = each.data["points"]
-            else:
-                points = each.points
+            points = each.data["points"] if config["renderer"] == "opengl" else each.points
             if len(points) == 0:
                 continue
             last = points[0]
@@ -1009,9 +1004,7 @@ class OpenGLMarkupText(OpenGLSVGMobject):
 
     def text2hash(self):
         """Generates ``sha256`` hash for file name."""
-        settings = (
-            "MARKUPPANGO" + self.font + self.slant + self.weight + self.color
-        )  # to differentiate from classical Pango Text
+        settings = f"MARKUPPANGO{self.font}{self.slant}{self.weight}{self.color}"
         settings += str(self.line_spacing) + str(self.size)
         settings += str(self.disable_ligatures)
         id_str = self.text + settings
@@ -1028,7 +1021,7 @@ class OpenGLMarkupText(OpenGLSVGMobject):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
         hash_name = self.text2hash()
-        file_name = os.path.join(dir_name, hash_name) + ".svg"
+        file_name = f"{os.path.join(dir_name, hash_name)}.svg"
         if os.path.exists(file_name):
             return file_name
 
@@ -1100,10 +1093,7 @@ class OpenGLMarkupText(OpenGLSVGMobject):
 
     def _parse_color(self, col):
         """Parse color given in ``<color>`` or ``<gradient>`` tags."""
-        if re.match("#[0-9a-f]{6}", col):
-            return col
-        else:
-            return Colors[col.lower()].value
+        return col if re.match("#[0-9a-f]{6}", col) else Colors[col.lower()].value
 
     def extract_color_tags(self):
         """Used to determine which parts (if any) of the string should be formatted

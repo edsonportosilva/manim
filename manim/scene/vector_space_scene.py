@@ -858,13 +858,10 @@ class LinearTransformationScene(VectorScene):
             The MathTex of the label.
         """
         label_mob = self.label_vector(vector, label, **kwargs)
-        if new_label:
-            label_mob.target_text = new_label
-        else:
-            label_mob.target_text = "{}({})".format(
-                transformation_name,
-                label_mob.get_tex_string(),
-            )
+        label_mob.target_text = (
+            new_label or f"{transformation_name}({label_mob.get_tex_string()})"
+        )
+
         label_mob.vector = vector
         label_mob.kwargs = kwargs
         if "animate" in label_mob.kwargs:

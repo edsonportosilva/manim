@@ -162,13 +162,14 @@ class Paragraph(VGroup):
                 ],
             )
             char_index_counter += lines_str_list[line_index].__len__() + 1
-        self.lines = []
-        self.lines.append([])
+        self.lines = [[]]
         for line_no in range(chars_lines_text_list.__len__()):
             self.lines[0].append(chars_lines_text_list[line_no])
-        self.lines_initial_positions = []
-        for line_no in range(self.lines[0].__len__()):
-            self.lines_initial_positions.append(self.lines[0][line_no].get_center())
+        self.lines_initial_positions = [
+            self.lines[0][line_no].get_center()
+            for line_no in range(self.lines[0].__len__())
+        ]
+
         self.lines.append([])
         self.lines[1].extend(
             [self.alignment for _ in range(chars_lines_text_list.__len__())],
@@ -213,7 +214,7 @@ class Paragraph(VGroup):
         alignment : :class:`str`
             Defines the alignment of paragraph. Possible values are "left", "right", "center".
         """
-        for line_no in range(0, self.lines[0].__len__()):
+        for line_no in range(self.lines[0].__len__()):
             self.change_alignment_for_a_line(alignment, line_no)
         return self
 
@@ -233,7 +234,7 @@ class Paragraph(VGroup):
     def set_all_lines_to_initial_positions(self):
         """Set all lines to their initial positions."""
         self.lines[1] = [None for _ in range(self.lines[0].__len__())]
-        for line_no in range(0, self.lines[0].__len__()):
+        for line_no in range(self.lines[0].__len__()):
             self[line_no].move_to(
                 self.get_center() + self.lines_initial_positions[line_no],
             )
@@ -427,7 +428,7 @@ class Text(SVGMobject):
 
         self.line_spacing = line_spacing
         self.font = font
-        self._font_size = float(font_size)
+        self._font_size = font_size
         # needs to be a float or else size is inflated when font_size = 24 (unknown cause)
         self.slant = slant
         self.weight = weight
@@ -458,7 +459,7 @@ class Text(SVGMobject):
         self.original_text = text
         self.disable_ligatures = disable_ligatures
         text_without_tabs = text
-        if text.find("\t") != -1:
+        if "\t" in text:
             text_without_tabs = text.replace("\t", " " * self.tab_width)
         self.text = text_without_tabs
         if self.line_spacing == -1:
@@ -558,10 +559,9 @@ class Text(SVGMobject):
 
     def find_indexes(self, word: str, text: str):
         """Internally used function. Finds the indexes of ``text`` in ``word``."""
-        temp = re.match(r"\[([0-9\-]{0,}):([0-9\-]{0,})\]", word)
-        if temp:
-            start = int(temp.group(1)) if temp.group(1) != "" else 0
-            end = int(temp.group(2)) if temp.group(2) != "" else len(text)
+        if temp := re.match(r"\[([0-9\-]{0,}):([0-9\-]{0,})\]", word):
+            start = int(temp[1]) if temp[1] != "" else 0
+            end = int(temp[2]) if temp[2] != "" else len(text)
             start = len(text) + start if start < 0 else start
             end = len(text) + end if end < 0 else end
             return [(start, end)]
@@ -593,7 +593,7 @@ class Text(SVGMobject):
 
     def set_color_by_t2c(self, t2c=None):
         """Internally used function. Sets color for specified strings."""
-        t2c = t2c if t2c else self.t2c
+        t2c = t2c or self.t2c
         for word, color in list(t2c.items()):
             for start, end in self.find_indexes(word, self.original_text):
                 self.chars[start:end].set_color(color)
@@ -601,7 +601,7 @@ class Text(SVGMobject):
     def set_color_by_t2g(self, t2g=None):
         """Internally used. Sets gradient colors for specified
         strings. Behaves similarly to ``set_color_by_t2c``."""
-        t2g = t2g if t2g else self.t2g
+        t2g = t2g or self.t2g
         for word, gradient in list(t2g.items()):
             for start, end in self.find_indexes(word, self.original_text):
                 self.chars[start:end].set_color_by_gradient(*gradient)
@@ -610,9 +610,7 @@ class Text(SVGMobject):
         """Internally used function.
         Generates ``sha256`` hash for file name.
         """
-        settings = (
-            "PANGO" + self.font + self.slant + self.weight
-        )  # to differentiate Text and CairoText
+        settings = f"PANGO{self.font}{self.slant}{self.weight}"
         settings += str(self.t2f) + str(self.t2s) + str(self.t2w)
         settings += str(self.line_spacing) + str(self._font_size)
         settings += str(self.disable_ligatures)
@@ -677,29 +675,26 @@ class Text(SVGMobject):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
         hash_name = self.text2hash()
-        file_name = os.path.join(dir_name, hash_name) + ".svg"
+        file_name = f"{os.path.join(dir_name, hash_name)}.svg"
 
         if os.path.exists(file_name):
-            svg_file = file_name
-        else:
-            settings = self.text2settings()
-            width = config["pixel_width"]
-            height = config["pixel_height"]
+            return file_name
+        settings = self.text2settings()
+        width = config["pixel_width"]
+        height = config["pixel_height"]
 
-            svg_file = manimpango.text2svg(
-                settings,
-                size,
-                line_spacing,
-                self.disable_ligatures,
-                file_name,
-                START_X,
-                START_Y,
-                width,
-                height,
-                self.text,
-            )
-
-        return svg_file
+        return manimpango.text2svg(
+            settings,
+            size,
+            line_spacing,
+            self.disable_ligatures,
+            file_name,
+            START_X,
+            START_Y,
+            width,
+            height,
+            self.text,
+        )
 
     def init_colors(self, propagate_colors=True):
         super().init_colors(propagate_colors=propagate_colors)
@@ -1036,7 +1031,7 @@ class MarkupText(SVGMobject):
         self.color = color
         self.line_spacing = line_spacing
         self.font = font
-        self._font_size = float(font_size)
+        self._font_size = font_size
         self.slant = slant
         self.weight = weight
         self.gradient = gradient
@@ -1055,8 +1050,7 @@ class MarkupText(SVGMobject):
                 'Using <color> tags in MarkupText is deprecated. Please use <span foreground="..."> instead.',
             )
         gradientmap = self.extract_gradient_tags()
-        validate_error = MarkupUtils.validate(self.text)
-        if validate_error:
+        if validate_error := MarkupUtils.validate(self.text):
             raise ValueError(validate_error)
 
         if self.line_spacing == -1:
@@ -1147,9 +1141,7 @@ class MarkupText(SVGMobject):
 
     def text2hash(self):
         """Generates ``sha256`` hash for file name."""
-        settings = (
-            "MARKUPPANGO" + self.font + self.slant + self.weight + self.color
-        )  # to differentiate from classical Pango Text
+        settings = f"MARKUPPANGO{self.font}{self.slant}{self.weight}{self.color}"
         settings += str(self.line_spacing) + str(self._font_size)
         settings += str(self.disable_ligatures)
         settings += str(self.justify)
@@ -1169,28 +1161,26 @@ class MarkupText(SVGMobject):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
         hash_name = self.text2hash()
-        file_name = os.path.join(dir_name, hash_name) + ".svg"
+        file_name = f"{os.path.join(dir_name, hash_name)}.svg"
         if os.path.exists(file_name):
-            svg_file = file_name
-        else:
-            logger.debug(f"Setting Text {self.text}")
-            svg_file = MarkupUtils.text2svg(
-                f'<span foreground="{self.color}">{self.text}</span>',
-                self.font,
-                self.slant,
-                self.weight,
-                size,
-                line_spacing,
-                self.disable_ligatures,
-                file_name,
-                START_X,
-                START_Y,
-                600,  # width
-                400,  # height
-                justify=self.justify,
-                pango_width=500,
-            )
-        return svg_file
+            return file_name
+        logger.debug(f"Setting Text {self.text}")
+        return MarkupUtils.text2svg(
+            f'<span foreground="{self.color}">{self.text}</span>',
+            self.font,
+            self.slant,
+            self.weight,
+            size,
+            line_spacing,
+            self.disable_ligatures,
+            file_name,
+            START_X,
+            START_Y,
+            600,  # width
+            400,  # height
+            justify=self.justify,
+            pango_width=500,
+        )
 
     def _count_real_chars(self, s):
         """Counts characters that will be displayed.
@@ -1244,10 +1234,7 @@ class MarkupText(SVGMobject):
 
     def _parse_color(self, col):
         """Parse color given in ``<color>`` or ``<gradient>`` tags."""
-        if re.match("#[0-9a-f]{6}", col):
-            return col
-        else:
-            return Colors[col.lower()].value
+        return col if re.match("#[0-9a-f]{6}", col) else Colors[col.lower()].value
 
     def extract_color_tags(self):
         """Used to determine which parts (if any) of the string should be formatted

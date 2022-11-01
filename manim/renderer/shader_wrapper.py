@@ -132,7 +132,7 @@ class ShaderWrapper:
 
     def combine_with(self, *shader_wrappers):
         # Assume they are of the same type
-        if len(shader_wrappers) == 0:
+        if not shader_wrappers:
             return
         if self.vert_indices is not None:
             num_verts = len(self.vert_data)
@@ -169,9 +169,7 @@ def get_shader_code_from_file(filename):
     except OSError:
         return None
 
-    with open(filepath) as f:
-        result = f.read()
-
+    result = Path(filepath).read_text()
     # To share functionality between shaders, some functions are read in
     # from other files an inserted into the relevant strings before
     # passing to ctx.program for compiling

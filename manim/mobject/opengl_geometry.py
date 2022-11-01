@@ -89,7 +89,7 @@ class OpenGLTipableVMobject(OpenGLVMobject):
         but has not yet been given a position in space.
         """
         config = {}
-        config.update(self.tip_config)
+        config |= self.tip_config
         config.update(kwargs)
         return OpenGLArrowTip(**config)
 
@@ -179,10 +179,7 @@ class OpenGLTipableVMobject(OpenGLVMobject):
         return self.points[-2]
 
     def get_end(self):
-        if self.has_tip():
-            return self.tip.get_start()
-        else:
-            return super().get_end()
+        return self.tip.get_start() if self.has_tip() else super().get_end()
 
     def get_start(self):
         if self.has_start_tip():
@@ -241,7 +238,7 @@ class OpenGLArc(OpenGLTipableVMobject):
         samples[1::2] /= np.cos(theta / 2)
 
         points = np.zeros((3 * n_components, 3))
-        points[0::3] = samples[0:-1:2]
+        points[::3] = samples[:-1:2]
         points[1::3] = samples[1::2]
         points[2::3] = samples[2::2]
         return points
@@ -438,10 +435,7 @@ class OpenGLLine(OpenGLTipableVMobject):
         if buff == 0:
             return
         #
-        if self.path_arc == 0:
-            length = self.get_length()
-        else:
-            length = self.get_arc_length()
+        length = self.get_length() if self.path_arc == 0 else self.get_arc_length()
         #
         if length < 2 * buff:
             return
@@ -790,10 +784,7 @@ class OpenGLRegularPolygon(OpenGLPolygon):
     def __init__(self, n=6, start_angle=None, **kwargs):
         self.start_angle = start_angle
         if self.start_angle is None:
-            if n % 2 == 0:
-                self.start_angle = 0
-            else:
-                self.start_angle = 90 * DEGREES
+            self.start_angle = 0 if n % 2 == 0 else 90 * DEGREES
         start_vect = rotate_vector(RIGHT, self.start_angle)
         vertices = compass_directions(n, start_vect)
         super().__init__(*vertices, **kwargs)

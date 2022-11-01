@@ -119,9 +119,11 @@ def assert_shallow_dict_compare(a: Dict, b: Dict, message_start: str) -> None:
         elif b_value != a[b_key]:
             mismatch.append(f"For {b_key} got {a[b_key]}, expected {b_value}")
 
-    for a_key, a_value in a.items():
-        if a_key not in b:
-            mismatch.append(f"Extraneous item {a_key}: {a_value}")
+    mismatch.extend(
+        f"Extraneous item {a_key}: {a_value}"
+        for a_key, a_value in a.items()
+        if a_key not in b
+    )
 
     mismatch_str = "\n".join(mismatch)
-    assert len(mismatch) == 0, f"{message_start}\n{mismatch_str}"
+    assert not mismatch, f"{message_start}\n{mismatch_str}"

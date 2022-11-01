@@ -172,7 +172,7 @@ class TexTemplate:
         """
 
         # If the environment starts with \begin, remove it
-        if environment[0:6] == r"\begin":
+        if environment[:6] == r"\begin":
             environment = environment[6:]
 
         # If environment begins with { strip it
@@ -181,9 +181,7 @@ class TexTemplate:
 
         # The \begin command takes everything and closes with a brace
         begin = r"\begin{" + environment
-        if (
-            begin[-1] != r"}" and begin[-1] != r"]"
-        ):  # If it doesn't end on } or ], assume missing }
+        if begin[-1] not in [r"}", r"]"]:  # If it doesn't end on } or ], assume missing }
             begin += r"}"
 
         # While the \end command terminates at the first closing brace

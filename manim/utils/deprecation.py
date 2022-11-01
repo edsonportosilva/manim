@@ -62,7 +62,7 @@ def _deprecation_text_component(
         if until
         else "may be removed in a later version"
     )
-    msg = " " + message if message else ""
+    msg = f" {message}" if message else ""
     return f"deprecated {since}and {until}.{msg}"
 
 
@@ -171,7 +171,7 @@ def deprecated(
             if for_docs:
                 mapper = {"class": "class", "method": "meth", "function": "func"}
                 repl = f":{mapper[what]}:`~.{replacement}`"
-            msg = f"Use {repl} instead.{' ' + message if message else ''}"
+            msg = f"Use {repl} instead.{f' {message}' if message else ''}"
         deprecated = _deprecation_text_component(since, until, msg)
         return f"The {what} {name} has been {deprecated}"
 
@@ -430,7 +430,7 @@ def deprecated_params(
                 for redirector_param in redirector_params:
                     if redirector_param in used:
                         redirector_args[redirector_param] = kwargs.pop(redirector_param)
-                if len(redirector_args) > 0:
+                if redirector_args:
                     kwargs.update(redirector(**redirector_args))
 
     def deprecate_params(func, *args, **kwargs):
@@ -460,7 +460,7 @@ def deprecated_params(
             if param in kwargs:
                 used.append(param)
 
-        if len(used) > 0:
+        if used:
             logger.warning(warning_msg(func, used))
             redirect_params(kwargs, used)
         return func(*args, **kwargs)

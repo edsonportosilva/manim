@@ -94,5 +94,5 @@ def test_graph_remove_edges(using_opengl_renderer):
     assert len(removed_mobjects) == 4
     assert len(G.vertices) == 5
     assert len(G.edges) == 0
-    assert set(G._graph.edges()) == set()
-    assert set(G.edges.keys()) == set()
+    assert not set(G._graph.edges())
+    assert not set(G.edges.keys())

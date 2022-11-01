@@ -318,14 +318,11 @@ class Mobject:
         clone_from_id[id(self)] = result
         for k, v in self.__dict__.items():
             setattr(result, k, copy.deepcopy(v, clone_from_id))
-        result.original_id = str(id(self))
+        result.original_id = id(self)
         return result
 
     def __repr__(self):
-        if config["renderer"] == "opengl":
-            return super().__repr__()
-        else:
-            return str(self.name)
+        return super().__repr__() if config["renderer"] == "opengl" else str(self.name)
 
     def reset_points(self):
         """Sets :attr:`points` to be an empty array."""
@@ -751,10 +748,7 @@ class Mobject:
 
     def generate_target(self, use_deepcopy=False):
         self.target = None  # Prevent unbounded linear recursion
-        if use_deepcopy:
-            self.target = copy.deepcopy(self)
-        else:
-            self.target = self.copy()
+        self.target = copy.deepcopy(self) if use_deepcopy else self.copy()
         return self.target
 
     # Updating
@@ -1203,7 +1197,7 @@ class Mobject:
 
     def apply_function(self, function, **kwargs):
         # Default to applying matrix about the origin, not mobjects center
-        if len(kwargs) == 0:
+        if not kwargs:
             kwargs["about_point"] = ORIGIN
         self.apply_points_function_about_point(
             lambda points: np.apply_along_axis(function, 1, points), **kwargs
@@ -1437,9 +1431,7 @@ class Mobject:
             return True
         if self.get_bottom()[1] > config["frame_y_radius"]:
             return True
-        if self.get_top()[1] < -config["frame_y_radius"]:
-            return True
-        return False
+        return self.get_top()[1] < -config["frame_y_radius"]
 
     def stretch_about_point(self, factor, dim, point):
         return self.stretch(factor, dim, about_point=point)
@@ -1753,7 +1745,7 @@ class Mobject:
         return self
 
     def set_submobject_colors_by_gradient(self, *colors):
-        if len(colors) == 0:
+        if not colors:
             raise ValueError("Need at least one color")
         elif len(colors) == 1:
             return self.set_color(*colors)
@@ -2556,7 +2548,7 @@ class Mobject:
         curr = len(self.submobjects)
         if curr == 0:
             # If empty, simply add n point mobjects
-            self.submobjects = [self.get_point_mobject() for k in range(n)]
+            self.submobjects = [self.get_point_mobject() for _ in range(n)]
             return
 
         target = curr + n
@@ -2567,8 +2559,7 @@ class Mobject:
         new_submobs = []
         for submob, sf in zip(self.submobjects, split_factors):
             new_submobs.append(submob)
-            for _ in range(1, sf):
-                new_submobs.append(submob.copy().fade(1))
+            new_submobs.extend(submob.copy().fade(1) for _ in range(1, sf))
         self.submobjects = new_submobs
         return self
 
@@ -2819,10 +2810,9 @@ class _AnimationBuilder:
     def build(self):
         from ..animation.transform import _MethodAnimation
 
-        if self.overridden_animation:
-            anim = self.overridden_animation
-        else:
-            anim = _MethodAnimation(self.mobject, self.methods)
+        anim = self.overridden_animation or _MethodAnimation(
+            self.mobject, self.methods
+        )
 
         for attr, value in self.anim_args.items():
             setattr(anim, attr, value)

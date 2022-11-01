@@ -519,7 +519,7 @@ class Graph(VMobject, metaclass=ConvertToOpenGL):
 
         if isinstance(label, (Mobject, OpenGLMobject)):
             self._labels[vertex] = label
-        elif label is True:
+        elif label:
             self._labels[vertex] = MathTex(vertex, fill_color=label_fill_color)
 
         base_vertex_config = copy(self.default_vertex_config)
@@ -588,7 +588,7 @@ class Graph(VMobject, metaclass=ConvertToOpenGL):
 
         graph_center = self.get_center()
         base_positions = {v: graph_center for v in vertices}
-        base_positions.update(positions)
+        base_positions |= positions
         positions = base_positions
 
         if isinstance(labels, bool):
@@ -596,7 +596,7 @@ class Graph(VMobject, metaclass=ConvertToOpenGL):
         else:
             assert isinstance(labels, dict)
             base_labels = {v: False for v in vertices}
-            base_labels.update(labels)
+            base_labels |= labels
             labels = base_labels
 
         if vertex_config is None:
@@ -843,8 +843,8 @@ class Graph(VMobject, metaclass=ConvertToOpenGL):
         """
         if edge not in self.edges:
             edge = edge[::-1]
-            if edge not in self.edges:
-                raise ValueError(f"The graph does not contain a edge '{edge}'")
+        if edge not in self.edges:
+            raise ValueError(f"The graph does not contain a edge '{edge}'")
 
         edge_mobject = self.edges.pop(edge)
 

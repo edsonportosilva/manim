@@ -41,10 +41,7 @@ def render_opengl_vectorized_mobject_fill(renderer, mobject):
 def render_mobject_fills_with_matrix(renderer, model_matrix, mobjects):
     # Precompute the total number of vertices for which to reserve space.
     # Note that triangulate_mobject() will cache its results.
-    total_size = 0
-    for submob in mobjects:
-        total_size += triangulate_mobject(submob).shape[0]
-
+    total_size = sum(triangulate_mobject(submob).shape[0] for submob in mobjects)
     attributes = np.empty(
         total_size,
         dtype=[
@@ -102,7 +99,7 @@ def triangulate_mobject(mob):
     # normal_vector = mob.get_unit_normal()
     points = mob.points
 
-    b0s = points[0::3]
+    b0s = points[::3]
     b1s = points[1::3]
     b2s = points[2::3]
     v01s = b1s - b0s
@@ -126,11 +123,12 @@ def triangulate_mobject(mob):
     indices = np.arange(len(points), dtype=int)
     inner_vert_indices = np.hstack(
         [
-            indices[0::3],
+            indices[::3],
             indices[1::3][concave_parts],
             indices[2::3][end_of_loop],
-        ],
+        ]
     )
+
     inner_vert_indices.sort()
     rings = np.arange(1, len(inner_vert_indices) + 1)[inner_vert_indices % 3 == 2]
 
@@ -195,10 +193,7 @@ def render_opengl_vectorized_mobject_stroke(renderer, mobject):
 
 def render_mobject_strokes_with_matrix(renderer, model_matrix, mobjects):
     # Precompute the total number of vertices for which to reserve space.
-    total_size = 0
-    for submob in mobjects:
-        total_size += submob.points.shape[0]
-
+    total_size = sum(submob.points.shape[0] for submob in mobjects)
     points = np.empty((total_size, 3))
     colors = np.empty((total_size, 4))
     widths = np.empty(total_size)

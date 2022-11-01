@@ -114,12 +114,13 @@ class SVGMobject(VMobject, metaclass=ConvertToOpenGL):
 
         possible_paths = [
             os.path.join(config.get_dir("assets_dir"), self.file_name),
-            os.path.join(config.get_dir("assets_dir"), self.file_name + ".svg"),
-            os.path.join(config.get_dir("assets_dir"), self.file_name + ".xdv"),
+            os.path.join(config.get_dir("assets_dir"), f"{self.file_name}.svg"),
+            os.path.join(config.get_dir("assets_dir"), f"{self.file_name}.xdv"),
             self.file_name,
-            self.file_name + ".svg",
-            self.file_name + ".xdv",
+            f"{self.file_name}.svg",
+            f"{self.file_name}.xdv",
         ]
+
         for path in possible_paths:
             if os.path.exists(path):
                 self.file_path = path
@@ -208,9 +209,6 @@ class SVGMobject(VMobject, metaclass=ConvertToOpenGL):
             result.append(self.ellipse_to_mobject(element, style))
         elif element.tagName in ["polygon", "polyline"]:
             result.append(self.polygon_to_mobject(element, style))
-        else:
-            pass  # TODO
-
         result = [m for m in result if m is not None]
         group_cls = self.get_group_class()
 
@@ -222,11 +220,7 @@ class SVGMobject(VMobject, metaclass=ConvertToOpenGL):
             # it seems wasteful to throw away the actual element,
             # but I'd like the parsing to be as similar as possible
             self.def_map[element.getAttribute("id")] = (style, element)
-        if is_defs:
-            # defs shouldn't be part of the result tree, only the id dictionary.
-            return []
-
-        return result
+        return [] if is_defs else result
 
     def generate_style(self):
         style = {
@@ -275,8 +269,9 @@ class SVGMobject(VMobject, metaclass=ConvertToOpenGL):
             A float representing the attribute string value.
         """
         stripped_attr = "".join(
-            [char for char in attr if char in string.digits + ".-e"],
+            [char for char in attr if char in f"{string.digits}.-e"]
         )
+
         return float(stripped_attr)
 
     def use_to_mobjects(
@@ -465,10 +460,10 @@ class SVGMobject(VMobject, metaclass=ConvertToOpenGL):
         # This seems hacky... yes it is.
         path_string = polygon_element.getAttribute("points").lstrip()
         for digit in string.digits:
-            path_string = path_string.replace(" " + digit, " L" + digit)
-        path_string = "M" + path_string
+            path_string = path_string.replace(f" {digit}", f" L{digit}")
+        path_string = f"M{path_string}"
         if polygon_element.tagName == "polygon":
-            path_string = path_string + "Z"
+            path_string = f"{path_string}Z"
         return self.path_string_to_mobject(path_string, style)
 
     def handle_transforms(self, element, mobject):
@@ -521,10 +516,7 @@ class SVGMobject(VMobject, metaclass=ConvertToOpenGL):
                 matrix[:, 1] *= -1
 
                 for mob in mobject.family_members_with_points():
-                    if config["renderer"] == "opengl":
-                        mob.points = np.dot(mob.points, matrix)
-                    else:
-                        mob.points = np.dot(mob.points, matrix)
+                    mob.points = np.dot(mob.points, matrix)
                 mobject.shift(x * RIGHT + y * UP)
 
             elif op_name == "scale":

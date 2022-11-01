@@ -131,10 +131,7 @@ def unit_interval(function):
 def zero(function):
     @wraps(function)
     def wrapper(t, *args, **kwargs):
-        if 0 <= t <= 1:
-            return function(t, *args, **kwargs)
-        else:
-            return 0
+        return function(t, *args, **kwargs) if 0 <= t <= 1 else 0
 
     return wrapper
 
@@ -170,10 +167,7 @@ def slow_into(t: float) -> float:
 
 @unit_interval
 def double_smooth(t: float) -> float:
-    if t < 0.5:
-        return 0.5 * smooth(2 * t)
-    else:
-        return 0.5 * (1 + smooth(2 * t - 1))
+    return 0.5 * smooth(2 * t) if t < 0.5 else 0.5 * (1 + smooth(2 * t - 1))
 
 
 @zero
@@ -270,7 +264,7 @@ def ease_in_out_sine(t: float) -> float:
 
 @unit_interval
 def ease_in_quad(t: float) -> float:
-    return t * t
+    return t**2
 
 
 @unit_interval
@@ -285,7 +279,7 @@ def ease_in_out_quad(t: float) -> float:
 
 @unit_interval
 def ease_in_cubic(t: float) -> float:
-    return t * t * t
+    return t**2 * t
 
 
 @unit_interval
@@ -300,7 +294,7 @@ def ease_in_out_cubic(t: float) -> float:
 
 @unit_interval
 def ease_in_quart(t: float) -> float:
-    return t * t * t * t
+    return t**2 * t * t
 
 
 @unit_interval
@@ -315,7 +309,7 @@ def ease_in_out_quart(t: float) -> float:
 
 @unit_interval
 def ease_in_quint(t: float) -> float:
-    return t * t * t * t * t
+    return t**2 * t * t * t
 
 
 @unit_interval
@@ -396,23 +390,23 @@ def ease_in_out_back(t: float) -> float:
 
 @unit_interval
 def ease_in_elastic(t: float) -> float:
-    c4 = (2 * np.pi) / 3
     if t == 0:
         return 0
     elif t == 1:
         return 1
     else:
+        c4 = (2 * np.pi) / 3
         return -pow(2, 10 * t - 10) * np.sin((t * 10 - 10.75) * c4)
 
 
 @unit_interval
 def ease_out_elastic(t: float) -> float:
-    c4 = (2 * np.pi) / 3
     if t == 0:
         return 0
     elif t == 1:
         return 1
     else:
+        c4 = (2 * np.pi) / 3
         return pow(2, -10 * t) * np.sin((t * 10 - 0.75) * c4) + 1
 
 
